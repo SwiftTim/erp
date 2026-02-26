@@ -1,0 +1,163 @@
+{
+  "learning_areas": [
+    {
+      "id": "js-eng",
+      "name": "English",
+      "level": "Junior School",
+      "category": "Core"
+    },
+    {
+      "id": "js-kis",
+      "name": "Kiswahili",
+      "level": "Junior School",
+      "category": "Core"
+    },
+    {
+      "id": "js-math",
+      "name": "Mathematics",
+      "level": "Junior School",
+      "category": "Core"
+    },
+    {
+      "id": "js-sci",
+      "name": "Integrated Science",
+      "level": "Junior School",
+      "category": "Core"
+    },
+    {
+      "id": "js-soc",
+      "name": "Social Studies",
+      "level": "Junior School",
+      "category": "Core"
+    },
+    {
+      "id": "js-pretech",
+      "name": "Pre-Technical Studies",
+      "level": "Junior School",
+      "category": "Core"
+    },
+    {
+      "id": "js-agri",
+      "name": "Agriculture",
+      "level": "Junior School",
+      "category": "Core"
+    },
+    {
+      "id": "js-biz",
+      "name": "Business Studies",
+      "level": "Junior School",
+      "category": "Core"
+    },
+    {
+      "id": "js-comp",
+      "name": "Computer Science",
+      "level": "Junior School",
+      "category": "Core"
+    },
+    {
+      "id": "up-math",
+      "name": "Mathematics",
+      "level": "Upper Primary",
+      "category": "Core"
+    },
+    {
+      "id": "up-sci",
+      "name": "Science & Technology",
+      "level": "Upper Primary",
+      "category": "Core"
+    },
+    {
+      "id": "up-agri",
+      "name": "Agriculture",
+      "level": "Upper Primary",
+      "category": "Core"
+    },
+    {
+      "id": "lp-math",
+      "name": "Mathematics",
+      "level": "Lower Primary",
+      "category": "Core"
+    },
+    {
+      "id": "pp-math",
+      "name": "Mathematical Activities",
+      "level": "Pre-Primary",
+      "category": "Core"
+    }
+  ],
+  "strands": [
+    {
+      "id": "s-js-math-1",
+      "learning_area_id": "js-math",
+      "strand_name": "Numbers"
+    },
+    {
+      "id": "s-js-math-2",
+      "learning_area_id": "js-math",
+      "strand_name": "Algebra"
+    },
+    {
+      "id": "s-js-sci-1",
+      "learning_area_id": "js-sci",
+      "strand_name": "Biological Concepts"
+    },
+    {
+      "id": "s-js-pretech-1",
+      "learning_area_id": "js-pretech",
+      "strand_name": "Wood Technology"
+    },
+    {
+      "id": "s-up-sci-1",
+      "learning_area_id": "up-sci",
+      "strand_name": "Living Things"
+    },
+    {
+      "id": "s-lp-math-1",
+      "learning_area_id": "lp-math",
+      "strand_name": "Numbers"
+    },
+    {
+      "id": "s-pp-math-1",
+      "learning_area_id": "pp-math",
+      "strand_name": "Numbers"
+    }
+  ],
+  "sub_strands": [
+    {
+      "id": "ss-js-math-1-1",
+      "strand_id": "s-js-math-1",
+      "sub_strand_name": "Decimals",
+      "assessment_rubric": "Learner can perform operations on decimals."
+    },
+    {
+      "id": "ss-js-math-1-2",
+      "strand_id": "s-js-math-1",
+      "sub_strand_name": "Fractions",
+      "assessment_rubric": "Learner compares and orders fractions."
+    },
+    {
+      "id": "ss-js-sci-1-1",
+      "strand_id": "s-js-sci-1",
+      "sub_strand_name": "Cells",
+      "assessment_rubric": "Learner identifies cell structures."
+    },
+    {
+      "id": "ss-up-sci-1-1",
+      "strand_id": "s-up-sci-1",
+      "sub_strand_name": "Plants & Animals",
+      "assessment_rubric": "Learner classifies plants by their characteristics."
+    },
+    {
+      "id": "ss-lp-math-1-1",
+      "strand_id": "s-lp-math-1",
+      "sub_strand_name": "Addition",
+      "assessment_rubric": "Learner adds numbers with regrouping."
+    },
+    {
+      "id": "ss-pp-math-1-1",
+      "strand_id": "s-pp-math-1",
+      "sub_strand_name": "Counting",
+      "assessment_rubric": "Learner counts objects up to 10."
+    }
+  ]
+}
