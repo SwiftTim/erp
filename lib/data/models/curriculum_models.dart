@@ -11,12 +11,15 @@ class LearningAreaModel {
   @ColumnInfo(name: 'grade_band')
   final String gradeBand;      // Pre-Primary | Lower Primary | Upper Primary | Junior School
   final String category;       // Core | Elective
+  @ColumnInfo(name: 'department_id')
+  final String? departmentId;
 
   const LearningAreaModel({
     required this.id,
     required this.name,
     required this.gradeBand,
     required this.category,
+    this.departmentId,
   });
 }
 

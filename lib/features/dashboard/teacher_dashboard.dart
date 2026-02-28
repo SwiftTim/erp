@@ -235,6 +235,13 @@ class TeacherDashboard extends ConsumerWidget {
           color: Colors.blue,
           onTap: () => context.push('/evidence/select'),
         ),
+        _ActionTile(
+          icon: Icons.corporate_fare_outlined,
+          title: 'Department',
+          subtitle: 'HOD portal',
+          color: Colors.brown,
+          onTap: () => context.push(Routes.departments),
+        ),
       ],
     );
   }

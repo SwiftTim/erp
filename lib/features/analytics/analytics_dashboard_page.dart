@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../auth/auth_provider.dart';
 import '../dashboard/widgets/app_shell.dart';
 import 'package:intl/intl.dart';
+import '../../core/services/cbc_aggregation_service.dart';
 
 class AnalyticsDashboardPage extends ConsumerStatefulWidget {
   const AnalyticsDashboardPage({super.key});
@@ -42,6 +43,7 @@ class _AnalyticsDashboardPageState extends ConsumerState<AnalyticsDashboardPage>
 
   Future<void> _loadAnalytics() async {
     final db = await ref.read(databaseProvider.future);
+    final aggregationService = CBCAggregationService(db);
     
     // 1. Enrollment Stats
     final students = await db.studentDao.findAll();
@@ -65,7 +67,22 @@ class _AnalyticsDashboardPageState extends ConsumerState<AnalyticsDashboardPage>
         .where((e) => e.expenseDate >= yearStart && e.expenseDate <= yearEnd)
         .fold(0.0, (sum, e) => sum + e.amount);
 
-    // 3. Absenteeism Analytics (Current Month threshold: > 3 days)
+    // 3. Academic Stats (CBC Aggregation)
+    final academicDist = {'EE': 0, 'ME': 0, 'AE': 0, 'BE': 0};
+    for (var s in students) {
+      final score = await aggregationService.getOverallTermScore(s.id, 1, '2026');
+      if (score != null) {
+        academicDist[score.band] = (academicDist[score.band] ?? 0) + 1;
+      }
+    }
+
+    // Convert to percentages for display
+    final totalAssessed = academicDist.values.fold(0, (sum, v) => sum + v);
+    if (totalAssessed > 0) {
+      _performanceStats = academicDist.map((k, v) => MapEntry(k, v / totalAssessed));
+    }
+
+    // 4. Absenteeism Analytics (Current Month threshold: > 3 days)
     final monthStart = '${now.year}-${now.month.toString().padLeft(2, '0')}-01';
     final monthEnd = '${now.year}-${now.month.toString().padLeft(2, '0')}-31';
     

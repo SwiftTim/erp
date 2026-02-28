@@ -34,7 +34,32 @@ class _LogIncidentDialogState extends ConsumerState<LogIncidentDialog> {
 
   Future<void> _loadStudents() async {
     final db = await ref.read(databaseProvider.future);
-    final students = await db.studentDao.findAll();
+    final user = ref.read(currentUserProvider);
+    
+    List<StudentModel> students;
+    if (user != null && user.roleLevel <= 3) {
+      students = await db.studentDao.findAll();
+    } else if (user != null) {
+      final Set<String> classIds = {};
+      if (user.assignedClassId != null) classIds.add(user.assignedClassId!);
+      
+      final activeTimetable = await db.timetableDao.getActiveTimetable();
+      if (activeTimetable != null) {
+        final slots = await db.timetableDao.getSlotsForTeacher(activeTimetable.id, user.id);
+        for (final s in slots) {
+          classIds.add(s.classId);
+        }
+      }
+      
+      if (classIds.isNotEmpty) {
+        students = await db.studentDao.findByClasses(classIds.toList());
+      } else {
+        students = [];
+      }
+    } else {
+      students = [];
+    }
+
     if (mounted) {
       setState(() {
         _students = students;

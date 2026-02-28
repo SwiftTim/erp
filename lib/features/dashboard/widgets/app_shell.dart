@@ -287,6 +287,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     if (level == AppConstants.roleTeacher || level == AppConstants.roleSeniorTeacher) {
       items.add(_NavItem(Icons.auto_stories_outlined, 'My Teaching', Routes.teacherTimetable));
       items.add(_NavItem(Icons.edit_calendar_outlined, 'CBC Assessments', Routes.assessment));
+      items.add(_NavItem(Icons.corporate_fare_outlined, 'Departments', Routes.departments));
       items.add(_NavItem(Icons.how_to_reg_outlined, 'Roll Call', Routes.attendance));
     }
     

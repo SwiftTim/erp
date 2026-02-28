@@ -53,7 +53,7 @@ class _SyllabusCoveragePageState extends ConsumerState<SyllabusCoveragePage> {
     }
 
     // 2. Load basic areas for grade
-    final areas = await db.curriculumDao.findAreasByLevel(_targetGrade!);
+    final areas = await db.curriculumDao.findAreasByLevel(AppConstants.gradeBand(_targetGrade!));
     
     // 3. Load baseline coverage for class
     final coverage = await db.curriculumDao.findCoverageForClass(_targetClassId!);

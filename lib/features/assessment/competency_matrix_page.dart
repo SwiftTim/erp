@@ -37,17 +37,43 @@ class _CompetencyMatrixPageState extends ConsumerState<CompetencyMatrixPage> {
 
   Future<void> _loadData() async {
     final db = await ref.read(databaseProvider.future);
+    final user = ref.read(currentUserProvider);
     
     // 1. Load Areas for Grade
-    final areas = await db.curriculumDao.findAreasByLevel(_selectedGrade!);
+    final areas = await db.curriculumDao.findAreasByLevel(AppConstants.gradeBand(_selectedGrade!));
     
-    // 2. Load Students for Grade
-    final students = await db.studentDao.findAll(); // Simple filter for now
-    final filteredStudents = students.where((s) => s.grade == _selectedGrade).toList();
+    // 2. Fetch visible students based on user role
+    List<StudentModel> students;
+    if (user != null && user.roleLevel <= 3) {
+      // Management sees all students for the grade
+      students = await db.studentDao.findByGrade(_selectedGrade!);
+    } else if (user != null) {
+      // Teachers see students in their assigned classes
+      final Set<String> classIds = {};
+      if (user.assignedClassId != null) classIds.add(user.assignedClassId!);
+      
+      final activeTimetable = await db.timetableDao.getActiveTimetable();
+      if (activeTimetable != null) {
+        final slots = await db.timetableDao.getSlotsForTeacher(activeTimetable.id, user.id);
+        for (final s in slots) {
+          classIds.add(s.classId);
+        }
+      }
+      
+      if (classIds.isNotEmpty) {
+        students = await db.studentDao.findByClasses(classIds.toList());
+        // Filter by selected grade for the matrix view
+        students = students.where((s) => s.grade == _selectedGrade).toList();
+      } else {
+        students = [];
+      }
+    } else {
+      students = [];
+    }
 
     setState(() {
       _areas = areas;
-      _students = filteredStudents;
+      _students = students;
       if (_areas.isNotEmpty && _selectedArea == null) {
         _selectedArea = _areas.first;
       }
@@ -231,6 +257,7 @@ class _CompetencyMatrixPageState extends ConsumerState<CompetencyMatrixPage> {
       subStrandId: subStrandId,
       teacherId: user.id,
       score: score,
+      assessmentType: 'Formative',
       term: 1,
       academicYear: '2026',
       dateRecorded: DateTime.now().millisecondsSinceEpoch,

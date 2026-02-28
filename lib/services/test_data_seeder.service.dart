@@ -9,6 +9,7 @@ import '../data/models/student_model.dart';
 import '../data/models/timetable_models.dart';
 import '../features/auth/auth_provider.dart';
 import '../core/constants/app_constants.dart';
+import '../data/models/department_model.dart';
 
 final testDataSeederProvider = Provider((ref) => TestDataSeeder(ref));
 
@@ -36,38 +37,17 @@ class TestDataSeeder {
 
     // 6. Seed Timetable Constraints (Propagate Business Logic)
     await _seedTimetableConstraints(db, teachers, classes);
+
+    // 7. Seed Departments
+    await _seedDepartments(db, teachers);
   }
 
   Future<void> _seedSubjects(dynamic db) async {
-    final List<LearningAreaModel> subjects = [];
-
-    // Pre-Primary
-    final ppSubjects = ['Language Activities', 'Mathematical Activities', 'Environmental Activities', 'Psychomotor and Creative', 'Religious Education'];
-    for (var name in ppSubjects) {
-      subjects.add(LearningAreaModel(id: 'SUB_PP_${name.split(' ')[0]}', name: name, gradeBand: 'Pre-Primary', category: 'Core'));
-    }
-
-    // Lower Primary (G1-G3)
-    final lpSubjects = ['Literacy', 'Kiswahili', 'English Language', 'Mathematics', 'Environmental Activities', 'Hygiene and Nutrition', 'Religious Education', 'Creative Arts', 'Movement Activities'];
-    for (var name in lpSubjects) {
-      subjects.add(LearningAreaModel(id: 'SUB_LP_${name.split(' ')[0]}', name: name, gradeBand: 'Lower Primary', category: 'Core'));
-    }
-
-    // Upper Primary (G4-G6)
-    final upSubjects = ['English', 'Kiswahili', 'Mathematics', 'Science and Technology', 'Social Studies', 'Agriculture and Nutrition', 'Creative Arts and Sports', 'Religious Education'];
-    for (var name in upSubjects) {
-      subjects.add(LearningAreaModel(id: 'SUB_UP_${name.split(' ')[0]}', name: name, gradeBand: 'Upper Primary', category: 'Core'));
-    }
-
-    // Junior School (G7-G9)
-    final jsSubjects = ['English', 'Kiswahili', 'Mathematics', 'Pre-Technical Studies', 'Integrated Science', 'Social Studies', 'Agriculture and Nutrition', 'Creative Arts and Sports', 'Religious Education'];
-    for (var name in jsSubjects) {
-      subjects.add(LearningAreaModel(id: 'SUB_JS_${name.split(' ')[0]}', name: name, gradeBand: 'Junior School', category: 'Core'));
-    }
-
-    for (var s in subjects) {
-      await db.curriculumDao.insertArea(s);
-    }
+    // 1. Clean up old test-only subjects that were breaking strand population
+    await db.curriculumDao.clearTestSubjects();
+    
+    // We fetch the already-seeded subjects from curriculum_seed.dart
+    // This ensures strands and sub-strands are correctly linked.
   }
 
   Future<List<UserModel>> _seedTeachers(dynamic db) async {
@@ -88,16 +68,12 @@ class TestDataSeeder {
       createdAt: now,
     ));
 
-    // 39 Regular Teachers
+    // 17 Regular Teachers (Worst Case Test Scenario: 18 Total Staff)
     final names = [
       'James Kamau', 'Mercy Achieng', 'Robert Otieno', 'Alice Mutua', 'David Kipkorir',
       'Fatuma Hassan', 'Kevin Odhiambo', 'Grace Maina', 'Peter Kariuki', 'Lydia Ochieng',
       'Samuel Ngugi', 'Phyllis Waweru', 'Isaac Kibet', 'Catherine Njeri', 'Paul Musyoka',
-      'Beatrice Kwamboka', 'Simon Moraa', 'Faith Chepkirui', 'Noel Zawadi', 'Hassan Ali',
-      'Mary Atieno', 'John Omondi', 'Lucy Wambui', 'George Njuguna', 'Esther Nyambura',
-      'Francis Mutiso', 'Rose Chebet', 'Dennis Wamalwa', 'Zeynep Amina', 'Victor Koech',
-      'Sarah Chelangat', 'Benard Onyango', 'Eunice Wanjiru', 'Daniel Mulu', 'Agnes Mutuku',
-      'Timothy Kiprotich', 'Caroline Wangari', 'Moses Okello', 'Joyce Anyango'
+      'Beatrice Kwamboka', 'Simon Moraa'
     ];
 
     for (int i = 0; i < names.length; i++) {
@@ -113,7 +89,10 @@ class TestDataSeeder {
     }
 
     for (var t in teachers) {
-      await db.userDao.insertUser(t);
+      final existing = await db.userDao.findById(t.id);
+      if (existing == null) {
+        await db.userDao.insertUser(t);
+      }
     }
     return teachers;
   }
@@ -135,7 +114,10 @@ class TestDataSeeder {
     }
 
     for (var c in classes) {
-      await db.curriculumDao.insertClass(c);
+      final existing = await db.curriculumDao.findClassById(c.id);
+      if (existing == null) {
+        await db.curriculumDao.insertClass(c);
+      }
     }
     return classes;
   }
@@ -146,6 +128,9 @@ class TestDataSeeder {
     final now = DateTime.now().millisecondsSinceEpoch;
 
     for (var c in classes) {
+      final studentCount = await db.studentDao.countByClass(c.id);
+      if (studentCount != null && studentCount >= 20) continue; 
+
       for (int i = 1; i <= 20; i++) {
         final fName = firstNames[_random.nextInt(firstNames.length)];
         final lName = lastNames[_random.nextInt(lastNames.length)];
@@ -190,17 +175,17 @@ class TestDataSeeder {
     }
 
     // ── Step 2: Group subjects by grade band ─────────────────────────────────
-    final ppSubjects  = subjects.where((s) => s.gradeBand == 'Pre-Primary').toList();
-    final lpSubjects  = subjects.where((s) => s.gradeBand == 'Lower Primary').toList();
-    final upSubjects  = subjects.where((s) => s.gradeBand == 'Upper Primary').toList();
-    final jsSubjects  = subjects.where((s) => s.gradeBand == 'Junior School').toList();
+    final ppSubjects  = subjects.where((s) => s.gradeBand == 'PP1-PP2').toList();
+    final lpSubjects  = subjects.where((s) => s.gradeBand == 'Grade 1-3').toList();
+    final upSubjects  = subjects.where((s) => s.gradeBand == 'Grade 4-6').toList();
+    final jsSubjects  = subjects.where((s) => s.gradeBand == 'Grade 7-9').toList();
 
     // ── Step 3: Fair Round-Robin Specialist Pool ──────────────────────────────
     // We split the 39 teachers into pools so every teacher qualifies for something.
     // Lower Primary: all 39 teachers rotate as potential class/assistant teachers
     // Upper & Junior Primary: all 39 teachers rotate as subject specialists
 
-    // Round-robin counter so assignments spread evenly across ALL teachers
+    // Round-robin counter so assignments spread evenly across ALL 17 teachers
     int teacherCursor = 0;
 
     // Helper: pick N teachers starting from cursor, wrapping around
@@ -214,7 +199,7 @@ class TestDataSeeder {
     }
 
     // ── Step 4: Seed Pre-Primary classes ─────────────────────────────────────
-    final ppClasses = classes.where((c) => AppConstants.gradeBand(c.grade) == 'Pre-Primary').toList();
+    final ppClasses = classes.where((c) => AppConstants.gradeBand(c.grade) == 'PP1-PP2').toList();
     for (var c in ppClasses) {
       int totalPeriods = 0;
       for (var s in ppSubjects) {
@@ -231,8 +216,8 @@ class TestDataSeeder {
           priorityLevel: 1,
         ));
 
-        // P2-P5: 4 additional teachers from round-robin pool (ensures broad coverage)
-        final pool = pickTeachers(4);
+        // P2-P3: 2 additional teachers from round-robin pool (Reduced for 18-teacher case)
+        final pool = pickTeachers(2);
         for (int k = 0; k < pool.length; k++) {
           await db.timetableDao.insertTeacherCapability(TeacherSubjectCapability(
             id: 'CAP_PP_P${k + 2}_${pool[k].id}_${s.id}',
@@ -252,7 +237,7 @@ class TestDataSeeder {
     }
 
     // ── Step 5: Seed Lower Primary classes ───────────────────────────────────
-    final lpClasses = classes.where((c) => AppConstants.gradeBand(c.grade) == 'Lower Primary').toList();
+    final lpClasses = classes.where((c) => AppConstants.gradeBand(c.grade) == 'Grade 1-3').toList();
     for (var c in lpClasses) {
       int totalPeriods = 0;
       for (var s in lpSubjects) {
@@ -270,8 +255,8 @@ class TestDataSeeder {
           priorityLevel: 1,
         ));
 
-        // P2-P5: round-robin pool (4 more teachers)
-        final pool = pickTeachers(4);
+        // P2-P3: round-robin pool (2 more teachers)
+        final pool = pickTeachers(2);
         for (int k = 0; k < pool.length; k++) {
           await db.timetableDao.insertTeacherCapability(TeacherSubjectCapability(
             id: 'CAP_LP_P${k + 2}_${pool[k].id}_${s.id}',
@@ -291,7 +276,7 @@ class TestDataSeeder {
     }
 
     // ── Step 6: Seed Upper Primary classes ───────────────────────────────────
-    final upClasses = classes.where((c) => AppConstants.gradeBand(c.grade) == 'Upper Primary').toList();
+    final upClasses = classes.where((c) => AppConstants.gradeBand(c.grade) == 'Grade 4-6').toList();
     for (var c in upClasses) {
       int totalPeriods = 0;
       for (var s in upSubjects) {
@@ -300,8 +285,8 @@ class TestDataSeeder {
         if (pPerWeek <= 0) continue;
         totalPeriods += pPerWeek;
 
-        // 5 teachers per subject from round-robin — guarantees every teacher gets turns
-        final pool = pickTeachers(5);
+        // 3 teachers per subject (Reduced for 18-teacher case)
+        final pool = pickTeachers(3);
         for (int k = 0; k < pool.length; k++) {
           await db.timetableDao.insertTeacherCapability(TeacherSubjectCapability(
             id: 'CAP_UP_P${k + 1}_${pool[k].id}_${s.id}_${c.id}',
@@ -321,7 +306,7 @@ class TestDataSeeder {
     }
 
     // ── Step 7: Seed Junior School classes ────────────────────────────────────
-    final jsClasses = classes.where((c) => AppConstants.gradeBand(c.grade) == 'Junior School').toList();
+    final jsClasses = classes.where((c) => AppConstants.gradeBand(c.grade) == 'Grade 7-9').toList();
     for (var c in jsClasses) {
       int totalPeriods = 0;
       for (var s in jsSubjects) {
@@ -330,8 +315,8 @@ class TestDataSeeder {
         if (pPerWeek <= 0) continue;
         totalPeriods += pPerWeek;
 
-        // 5 teachers per subject from round-robin
-        final pool = pickTeachers(5);
+        // 3 teachers per subject (Reduced for 18-teacher case)
+        final pool = pickTeachers(3);
         for (int k = 0; k < pool.length; k++) {
           await db.timetableDao.insertTeacherCapability(TeacherSubjectCapability(
             id: 'CAP_JS_P${k + 1}_${pool[k].id}_${s.id}_${c.id}',
@@ -346,6 +331,100 @@ class TestDataSeeder {
           classId: c.id,
           subjectId: s.id,
           periodsPerWeek: pPerWeek,
+        ));
+      }
+    }
+  }
+
+  Future<void> _seedDepartments(dynamic db, List<UserModel> teachers) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    
+    final academicDepts = [
+      {'id': 'DEPT_LANGUAGES', 'name': 'Languages Department'},
+      {'id': 'DEPT_MATHEMATICS', 'name': 'Mathematics Department'},
+      {'id': 'DEPT_SCIENCE', 'name': 'Science & Technology Department'},
+      {'id': 'DEPT_HUMANITIES', 'name': 'Humanities / Social Studies Department'},
+      {'id': 'DEPT_CREATIVE_ARTS', 'name': 'Creative Arts Department'},
+      {'id': 'DEPT_TECHNICAL', 'name': 'Technical & Applied Sciences Department'},
+      {'id': 'DEPT_RELIGIOUS', 'name': 'Religious Education Department'},
+    ];
+
+    final adminDepts = [
+      {'id': 'DEPT_EXAMS', 'name': 'Examinations Department'},
+      {'id': 'DEPT_GUIDANCE', 'name': 'Guidance & Counseling'},
+      {'id': 'DEPT_ICT', 'name': 'ICT Department'},
+      {'id': 'DEPT_DISCIPLINE', 'name': 'Discipline Department'},
+      {'id': 'DEPT_COCURRICULAR', 'name': 'Co-Curricular Department'},
+      {'id': 'DEPT_SNE', 'name': 'Special Needs Education'},
+    ];
+
+    final allDepts = [...academicDepts, ...adminDepts];
+
+    for (var d in allDepts) {
+      final existing = await db.departmentDao.getDepartmentById(d['id']!);
+      if (existing == null) {
+        await db.departmentDao.insertDepartment(DepartmentModel(
+          id: d['id']!,
+          name: d['name']!,
+          description: 'Standard school department for ${d['name']}',
+          createdBy: 'SYS_ADMIN',
+          createdAt: now,
+        ));
+      }
+    }
+
+    // Assign HODs (Round-robin from teachers)
+    for (int i = 0; i < allDepts.length; i++) {
+      final teacher = teachers[i % teachers.length];
+      await db.departmentDao.insertMember(DepartmentMemberModel(
+        departmentId: allDepts[i]['id']!,
+        teacherId: teacher.id,
+        role: 'hod',
+        assignedAt: now,
+      ));
+    }
+
+    // Assign others as members
+    for (var teacher in teachers) {
+      final deptIndex = teachers.indexOf(teacher) % academicDepts.length;
+      await db.departmentDao.insertMember(DepartmentMemberModel(
+        departmentId: academicDepts[deptIndex]['id']!,
+        teacherId: teacher.id,
+        role: 'member',
+        assignedAt: now,
+      ));
+    }
+
+    // Link subjects to departments
+    final subjects = await db.curriculumDao.findAllLearningAreas();
+    for (var s in subjects) {
+      String? deptId;
+      final name = s.name.toLowerCase();
+      if (name.contains('language') || name.contains('english') || name.contains('literacy') || name.contains('kiswahili')) {
+        deptId = 'DEPT_LANGUAGES';
+      } else if (name.contains('math')) {
+        deptId = 'DEPT_MATHEMATICS';
+      } else if (name.contains('science') || name.contains('environmental') || name.contains('hygiene') || name.contains('integrated')) {
+        deptId = 'DEPT_SCIENCE';
+      } else if (name.contains('social')) {
+        deptId = 'DEPT_HUMANITIES';
+      } else if (name.contains('creative') || name.contains('art')) {
+        deptId = 'DEPT_CREATIVE_ARTS';
+      } else if (name.contains('ict')) {
+        deptId = 'DEPT_ICT';
+      } else if (name.contains('technical')) {
+        deptId = 'DEPT_TECHNICAL';
+      } else if (name.contains('religious')) {
+        deptId = 'DEPT_RELIGIOUS';
+      }
+
+      if (deptId != null) {
+        await db.curriculumDao.insertArea(LearningAreaModel(
+          id: s.id,
+          name: s.name,
+          gradeBand: s.gradeBand,
+          category: s.category,
+          departmentId: deptId,
         ));
       }
     }

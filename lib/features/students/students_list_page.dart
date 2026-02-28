@@ -7,6 +7,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/student_model.dart';
+import '../../data/models/user_model.dart';
 import '../auth/auth_provider.dart';
 import '../dashboard/widgets/app_shell.dart';
 import '../../core/services/archiving_service.dart';
@@ -135,11 +136,15 @@ class _StudentsListPageState extends ConsumerState<StudentsListPage> {
   }
 
   Widget _buildStudentList(dynamic db) {
-    return StreamBuilder<List<StudentModel>>(
-      // In production, you'd use a reactive stream from Floor. 
-      // For now we'll use a Future and convert to a stream-like behavior.
-      stream: Stream.fromFuture(db.studentDao.findAll()),
+    final user = ref.watch(currentUserProvider);
+    
+    return FutureBuilder<List<StudentModel>>(
+      future: _fetchVisibleStudents(db, user),
       builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting && _query.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
         if (!snapshot.hasData) return const SizedBox();
 
         final students = snapshot.data!.where((s) {
@@ -155,7 +160,7 @@ class _StudentsListPageState extends ConsumerState<StudentsListPage> {
               children: [
                 Icon(Icons.people_outline, size: 64, color: Colors.grey.withOpacity(0.3)),
                 const SizedBox(height: 16),
-                Text(_query.isEmpty ? 'No students registered Yet' : 'No results for "$_query"', 
+                Text(_query.isEmpty ? 'No students linked to your classes' : 'No results for "$_query"', 
                   style: const TextStyle(color: Colors.grey)),
               ],
             ),
@@ -175,6 +180,38 @@ class _StudentsListPageState extends ConsumerState<StudentsListPage> {
         );
       },
     );
+  }
+
+  Future<List<StudentModel>> _fetchVisibleStudents(dynamic db, UserModel? user) async {
+    if (user == null) return [];
+    
+    // Admins, Directors, Headteachers, and Deputies see everyone (Role Levels 1, 2, 3)
+    if (user.roleLevel <= 3) {
+      return db.studentDao.findAll();
+    }
+
+    // Higher roles like Account/Bursar might also need to see all for fees?
+    // But per instructions: "teachers be only be able to seethe learners of the only allocated classes"
+    
+    final Set<String> classIds = {};
+    
+    // 1. Check direct Class Teacher assignment
+    if (user.assignedClassId != null) {
+      classIds.add(user.assignedClassId!);
+    }
+    
+    // 2. Check Timetable allocations for specialized subjects
+    final activeTimetable = await db.timetableDao.getActiveTimetable();
+    if (activeTimetable != null) {
+      final slots = await db.timetableDao.getSlotsForTeacher(activeTimetable.id, user.id);
+      for (final slot in slots) {
+        classIds.add(slot.classId);
+      }
+    }
+
+    if (classIds.isEmpty) return [];
+    
+    return db.studentDao.findByClasses(classIds.toList());
   }
 }
 

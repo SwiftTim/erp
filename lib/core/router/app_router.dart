@@ -22,6 +22,9 @@ import '../../features/reports/report_generator_page.dart';
 import '../../features/messaging/messaging_page.dart';
 import '../../features/curriculum/syllabus_coverage_page.dart';
 import '../../features/admin/staff_management_page.dart';
+import '../../features/admin/compliance_dashboard_page.dart';
+import '../../features/departments/department_list_page.dart';
+import '../../features/departments/department_dashboard_page.dart';
 
 import '../../features/health/health_dashboard_page.dart';
 import '../../features/admissions/admissions_dashboard_page.dart';
@@ -37,7 +40,6 @@ import '../../features/admin/timetable_engine_page.dart';
 import '../../features/admin/teacher_capacity_page.dart';
 import '../../features/admin/class_demand_page.dart';
 import '../../features/admin/substitution_management_page.dart';
-import '../../features/admin/compliance_dashboard_page.dart';
 import '../../features/finance/parent_ledger_page.dart';
 import '../../features/dashboard/widgets/app_shell.dart';
 import '../../features/teaching/teacher_timetable_page.dart';
@@ -83,6 +85,8 @@ class Routes {
   static const timetableEngine   = '/timetable';  // alias for engine page
   static const teacherTimetable = '/teaching/timetable';
   static const instructionalHub = '/teaching/hub/:slotId';
+  static const departments    = '/departments';
+  static const departmentDetail = '/departments/:id';
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -306,6 +310,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.instructionalHub,
         builder: (_, state) => InstructionalHubPage(slotId: state.pathParameters['slotId']!),
+      ),
+      GoRoute(
+        path: Routes.departments,
+        builder: (_, __) => const DepartmentListPage(),
+      ),
+      GoRoute(
+        path: Routes.departmentDetail,
+        builder: (_, state) => DepartmentDashboardPage(deptId: state.pathParameters['id']!),
       ),
     ],
     errorBuilder: (_, state) => Scaffold(

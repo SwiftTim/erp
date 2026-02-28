@@ -55,7 +55,7 @@ class AppConstants {
 
   // ── Departments (For HODs & Budgeting) ────────────────────────────────────
   static const List<String> departments = [
-    'Mathematics', 'Languages', 'Science & Tech', 'Social Sciences', 
+    'Mathematics', 'Languages', 'Science & Tech', 'Social Sciences',
     'Creative Arts & Sports', 'Religious Education', 'Applied Sciences'
   ];
 
@@ -73,10 +73,10 @@ class AppConstants {
       ];
 
   static String gradeBand(String grade) {
-    if (prePrimaryGrades.contains(grade)) return 'Pre-Primary';
-    if (lowerPrimaryGrades.contains(grade)) return 'Lower Primary';
-    if (upperPrimaryGrades.contains(grade)) return 'Upper Primary';
-    return 'Junior School';
+    if (prePrimaryGrades.contains(grade)) return 'PP1-PP2';
+    if (lowerPrimaryGrades.contains(grade)) return 'Grade 1-3';
+    if (upperPrimaryGrades.contains(grade)) return 'Grade 4-6';
+    return 'Grade 7-9';
   }
 
   static String? getNextGrade(String currentGrade) {
@@ -108,6 +108,39 @@ class AppConstants {
     2: 'Learner is developing competencies but requires occasional support or practice.',
     1: 'Learner has significant gaps and requires intensive support and intervention.',
   };
+
+  // ── CBC Performance Band Boundaries (For aggregation) ──────────────────────
+  static const double bandEEThreshold = 3.5;
+  static const double bandMEThreshold = 2.5;
+  static const double bandAEThreshold = 1.5;
+
+  static String getCompetencyBand(double average) {
+    if (average >= bandEEThreshold) return 'EE';
+    if (average >= bandMEThreshold) return 'ME';
+    if (average >= bandAEThreshold) return 'AE';
+    return 'BE';
+  }
+
+  static String getCompetencyLabel(double average) {
+    if (average >= bandEEThreshold) return 'Exceeding Expectations';
+    if (average >= bandMEThreshold) return 'Meeting Expectations';
+    if (average >= bandAEThreshold) return 'Approaching Expectations';
+    return 'Below Expectations';
+  }
+
+  // ── Assessment Types (CBC Aligned) ────────────────────────────────────────
+  static const List<String> assessmentTypes = [
+    'Diagnostic',
+    'Formative',
+    'Summative',
+    'Peer Assessment',
+    'Self Assessment',
+    'Project-Based',
+    'Practical',
+    'Oral',
+    'Written',
+    'Observation',
+  ];
 
   // ── Summative Achievement Levels (8-Point) ─────────────────────────────────
   static const List<SummativeLevel> summativeLevels = [

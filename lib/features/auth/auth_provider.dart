@@ -7,7 +7,7 @@ import '../../data/models/user_model.dart';
 import '../../data/models/student_model.dart';
 import '../../data/models/assessment_model.dart';
 import '../../data/local/app_database.dart';
-import '../../data/sync/curriculum_seeder.dart';
+import '../../core/data/curriculum_seed.dart';
 import '../../data/models/medical_model.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/models/curriculum_models.dart';
@@ -19,7 +19,7 @@ final databaseProvider = FutureProvider<AppDatabase>((ref) async {
   final db = await AppDatabase.create();
 
   // 1. Seed Curriculum
-  await CurriculumSeeder.seedIfEmpty(db);
+  await seedCurriculum(db);
 
   // 2. Seed Default Accounts if empty
   final userCount = await db.userDao.countAll();
@@ -130,6 +130,7 @@ final databaseProvider = FutureProvider<AppDatabase>((ref) async {
       subStrandId: 'MATH-001',
       teacherId: 'teacher@cbc.ke',
       score: 4, // EE
+      assessmentType: 'Diagnostic',
       term: 1,
       academicYear: '2026',
       dateRecorded: DateTime.now().millisecondsSinceEpoch,

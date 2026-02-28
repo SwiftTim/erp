@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/models/attendance_model.dart';
 import '../../data/models/student_model.dart';
+import '../../data/models/curriculum_models.dart';
 import '../auth/auth_provider.dart';
 import '../dashboard/widgets/app_shell.dart';
 
@@ -25,6 +26,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
   final Map<String, String> _attendance = {};
   bool _loading = true;
   bool _saving = false;
+  SchoolClassModel? _class;
 
   @override
   void initState() {
@@ -41,18 +43,25 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
 
     // 1. Check for Substitution Rights first
     final subs = await db.enterpriseDao.findActiveSubstitutions(user.id, todayEpoch);
-    String targetClassId = user.assignedClassId ?? '';
+    String? targetClassId = user.assignedClassId;
     
     if (subs.isNotEmpty) {
       // If teacher is subbing today, use the subbed class ID
       targetClassId = subs.first.classId;
     }
 
+    if (targetClassId == null || targetClassId.isEmpty) {
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
+
+    final schoolClass = await db.curriculumDao.findClassById(targetClassId);
     final students = await db.studentDao.findByClass(targetClassId);
     final existingRecords = await db.attendanceDao.findForClassByDate(targetClassId, _today);
 
     if (mounted) {
       setState(() {
+        _class = schoolClass;
         _students = students;
         for (final s in students) {
           final existing = existingRecords.where((r) => r.studentId == s.id).firstOrNull;
@@ -118,40 +127,68 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
   @override
   Widget build(BuildContext context) {
     return AppShell(
-      title: 'Roll Call — $_today',
+      title: 'Roll Call — ${_class?.name ?? _today}',
       actions: [
-        TextButton.icon(
-          onPressed: () {
-            setState(() { for (var id in _attendance.keys) { _attendance[id] = AppConstants.present; } });
-          },
-          icon: const Icon(Icons.done_all, size: 18),
-          label: const Text('Mark All Present'),
-        ),
+        if (_class != null && _students.isNotEmpty)
+          TextButton.icon(
+            onPressed: () {
+              setState(() { for (var id in _attendance.keys) { _attendance[id] = AppConstants.present; } });
+            },
+            icon: const Icon(Icons.done_all, size: 18),
+            label: const Text('Mark All Present'),
+          ),
       ],
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                _buildHeader(context),
-                Expanded(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: _students.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, i) {
-                      final s = _students[i];
-                      final status = _attendance[s.id] ?? AppConstants.present;
-                      return _AttendanceTile(
-                        student: s,
-                        status: status,
-                        onChanged: (newVal) => setState(() => _attendance[s.id] = newVal),
-                      );
-                    },
-                  ),
+          : _students.isEmpty
+              ? _buildNoAssignmentState()
+              : Column(
+                  children: [
+                    _buildHeader(context),
+                    Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemCount: _students.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, i) {
+                          final s = _students[i];
+                          final status = _attendance[s.id] ?? AppConstants.present;
+                          return _AttendanceTile(
+                            student: s,
+                            status: status,
+                            onChanged: (newVal) => setState(() => _attendance[s.id] = newVal),
+                          );
+                        },
+                      ),
+                    ),
+                    _buildFooter(),
+                  ],
                 ),
-                _buildFooter(),
-              ],
+    );
+  }
+
+  Widget _buildNoAssignmentState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.assignment_ind_outlined, size: 64, color: Colors.grey.withOpacity(0.3)),
+            const SizedBox(height: 24),
+            const Text(
+              'No Class Assigned',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 8),
+            const Text(
+              'You have not been assigned as a Class Teacher for any class. Please contact the administration to be assigned a class for roll call.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

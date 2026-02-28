@@ -14,6 +14,9 @@ abstract class StudentDao {
   @Query('SELECT * FROM students WHERE class_id = :classId ORDER BY full_name')
   Future<List<StudentModel>> findByClass(String classId);
 
+  @Query('SELECT * FROM students WHERE class_id IN (:classIds) ORDER BY full_name')
+  Future<List<StudentModel>> findByClasses(List<String> classIds);
+
   @Query('SELECT * FROM students WHERE grade = :grade ORDER BY full_name')
   Future<List<StudentModel>> findByGrade(String grade);
 
@@ -25,6 +28,9 @@ abstract class StudentDao {
 
   @Query('SELECT COUNT(*) FROM students')
   Future<int?> countAll();
+
+  @Query('SELECT COUNT(*) FROM students WHERE class_id = :classId')
+  Future<int?> countByClass(String classId);
 
   @Query('SELECT * FROM students ORDER BY full_name')
   Future<List<StudentModel>> findAll();

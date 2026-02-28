@@ -13,6 +13,7 @@ import '../dashboard/widgets/app_shell.dart';
 import '../../data/sync/export_service.dart';
 import '../../data/local/app_database.dart';
 import '../auth/auth_provider.dart';
+import '../../core/services/cbc_aggregation_service.dart';
 
 class ReportGeneratorPage extends ConsumerStatefulWidget {
   const ReportGeneratorPage({super.key});
@@ -58,17 +59,27 @@ class _ReportGeneratorPageState extends ConsumerState<ReportGeneratorPage> {
   Future<Uint8List> _buildSampleReport(String grade, int term) async {
     final doc = pw.Document();
     final db = await ref.read(databaseProvider.future);
+    final aggregationService = CBCAggregationService(db);
     
     // 1. Fetch real students for this grade
     final allStudents = await db.studentDao.findAll();
     final gradeStudents = allStudents.where((s) => s.grade == grade).toList();
 
     for (final student in gradeStudents) {
-      // 2. Fetch real assessments and finance data
-      final assessments = await db.assessmentDao.findForStudent(student.id, term, '2026');
+      // 2. Fetch real aggregated subject scores
+      final areas = await db.curriculumDao.findAreasByLevel(AppConstants.gradeBand(grade));
+      final subjectScores = <String, CBCScore>{};
+      
+      for (final area in areas) {
+        final score = await aggregationService.getSubjectScore(student.id, area.id, term, '2026');
+        if (score != null) {
+          subjectScores[area.name] = score;
+        }
+      }
+
       final totalPaid = await db.financeDao.totalPaid(student.id) ?? 0.0;
-      final balance = 15000.0 - totalPaid; // Fixed term fee for demo purposes
-      final isDefaulter = balance > 0;
+      final balance = 15000.0 - totalPaid; // Fixed term fee
+      final isDefaulter = balance > 1000; // Allow small balance
       
       doc.addPage(pw.Page(
         pageFormat: PdfPageFormat.a4,
@@ -76,24 +87,6 @@ class _ReportGeneratorPageState extends ConsumerState<ReportGeneratorPage> {
         build: (ctx) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            // ── DEFAULTER LOCK BANNER ──
-            if (isDefaulter)
-              pw.Container(
-                width: double.infinity,
-                padding: const pw.EdgeInsets.all(12),
-                margin: const pw.EdgeInsets.only(bottom: 20),
-                decoration: pw.BoxDecoration(
-                  color: PdfColors.red100,
-                  border: pw.Border.all(color: PdfColors.red),
-                  borderRadius: pw.BorderRadius.circular(4),
-                ),
-                child: pw.Text(
-                  'RESULTS WITHHELD: Outstanding Fee Balance of KES ${balance.toStringAsFixed(0)}',
-                  style: pw.TextStyle(color: PdfColors.red, fontWeight: pw.FontWeight.bold, fontSize: 14),
-                  textAlign: pw.TextAlign.center,
-                ),
-              ),
-
             // Header
             pw.Container(
               width: double.infinity,
@@ -143,15 +136,20 @@ class _ReportGeneratorPageState extends ConsumerState<ReportGeneratorPage> {
             pw.SizedBox(height: 20),
 
             // Assessment scores
-            pw.Text('ACADEMIC PERFORMANCE',
+            pw.Text('ACADEMIC PERFORMANCE (Aggregated Subject Mastery)',
                 style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
             pw.SizedBox(height: 8),
             pw.Table(
               border: pw.TableBorder.all(color: PdfColors.grey300),
+              columnWidths: {
+                0: const pw.FlexColumnWidth(3),
+                1: const pw.FlexColumnWidth(1),
+                2: const pw.FlexColumnWidth(4),
+              },
               children: [
                 pw.TableRow(
                   decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-                  children: ['Learning Area', 'Score', 'Teacher Remarks']
+                  children: ['Learning Area', 'Mastery', 'Remarks']
                       .map((h) => pw.Padding(
                             padding: const pw.EdgeInsets.all(8),
                             child: pw.Text(h,
@@ -159,24 +157,24 @@ class _ReportGeneratorPageState extends ConsumerState<ReportGeneratorPage> {
                           ))
                       .toList(),
                 ),
-                if (assessments.isEmpty)
+                if (subjectScores.isEmpty)
                   pw.TableRow(children: [
                     pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('No assessments recorded yet.', style: const pw.TextStyle(fontSize: 10))),
                     pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('N/A')),
-                    pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('Please complete end-of-term marking.', style: const pw.TextStyle(fontSize: 10))),
+                    pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('Please complete markings.', style: const pw.TextStyle(fontSize: 10))),
                   ])
                 else
-                  ...assessments.map((a) =>
+                  ...subjectScores.entries.map((entry) =>
                     pw.TableRow(children: [
-                      pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text('Learning Area - ${a.id.substring(0,4)}', style: pw.TextStyle(fontSize: 10))),
-                      pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text(isDefaulter ? '***' : (AppConstants.rubricCode[a.score] ?? 'ME'), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: isDefaulter ? PdfColors.red : PdfColors.black))),
-                      pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text(isDefaulter ? 'Clear fee balance to view teacher remarks.' : (a.teacherRemarks ?? 'Learner demonstrates proficiency in the strand.'), style: pw.TextStyle(fontSize: 9, color: isDefaulter ? PdfColors.red : PdfColors.black))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text(entry.key, style: pw.TextStyle(fontSize: 10))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text(isDefaulter ? '***' : entry.value.band, style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: isDefaulter ? PdfColors.red : PdfColors.black))),
+                      pw.Padding(padding: const pw.EdgeInsets.all(8), child: pw.Text(isDefaulter ? 'Fees Balance withheld.' : entry.value.label, style: pw.TextStyle(fontSize: 9))),
                     ])),
               ],
             ),
             pw.SizedBox(height: 20),
 
-            // Core Competencies (Simulated based on average score)
+            // Core Competencies
             pw.Text('CORE COMPETENCIES',
                 style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
             pw.SizedBox(height: 8),
@@ -199,7 +197,7 @@ class _ReportGeneratorPageState extends ConsumerState<ReportGeneratorPage> {
                     ]),
                   )).toList(),
             ),
-            pw.Spacer(), // Push signatures to bottom
+            pw.Spacer(),
 
             // Signature row
             pw.Row(
@@ -218,7 +216,7 @@ class _ReportGeneratorPageState extends ConsumerState<ReportGeneratorPage> {
               ],
             ),
             pw.SizedBox(height: 12),
-            pw.Text('NOTE: This report is generated by CBC School Management System and is compliant with KNEC 2026 standards.',
+            pw.Text('Note: This is an aggregated CBC 2026 Learner Progress Report.',
                 style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
           ],
         ),
@@ -226,7 +224,6 @@ class _ReportGeneratorPageState extends ConsumerState<ReportGeneratorPage> {
     }
 
     if (gradeStudents.isEmpty) {
-      // Return empty doc if no students found to avoid crash
       doc.addPage(pw.Page(build: (ctx) => pw.Center(child: pw.Text('No students found for $grade'))));
     }
 

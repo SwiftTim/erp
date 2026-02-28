@@ -27,6 +27,8 @@ class AssessmentModel {
   final int isModerated;       // 0=pending, 1=moderated/locked
   @ColumnInfo(name: 'moderated_by')
   final String? moderatedBy;
+  @ColumnInfo(name: 'assessment_type')
+  final String assessmentType; // diagnostic, formative, summative, etc.
   final int synced;            // 0=local, 1=synced
 
   const AssessmentModel({
@@ -35,6 +37,7 @@ class AssessmentModel {
     required this.subStrandId,
     required this.teacherId,
     required this.score,
+    required this.assessmentType,
     this.teacherRemarks,
     this.evidencePath,
     required this.term,
@@ -45,8 +48,9 @@ class AssessmentModel {
     this.synced = 0,
   });
 
-  AssessmentModel copyWith({
+    AssessmentModel copyWith({
     int? score,
+    String? assessmentType,
     String? teacherRemarks,
     String? evidencePath,
     int? isModerated,
@@ -59,6 +63,7 @@ class AssessmentModel {
       subStrandId: subStrandId,
       teacherId: teacherId,
       score: score ?? this.score,
+      assessmentType: assessmentType ?? this.assessmentType,
       teacherRemarks: teacherRemarks ?? this.teacherRemarks,
       evidencePath: evidencePath ?? this.evidencePath,
       term: term,
@@ -76,6 +81,7 @@ class AssessmentModel {
         'subStrandId': subStrandId,
         'teacherId': teacherId,
         'score': score,
+        'assessmentType': assessmentType,
         'teacherRemarks': teacherRemarks,
         'evidencePath': evidencePath,
         'term': term,

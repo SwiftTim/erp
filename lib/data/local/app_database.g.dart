@@ -102,13 +102,15 @@ class _$AppDatabase extends AppDatabase {
 
   MessagingDao? _messagingDaoInstance;
 
+  DepartmentDao? _departmentDaoInstance;
+
   Future<sqflite.Database> open(
     String path,
     List<Migration> migrations, [
     Callback? callback,
   ]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 3,
+      version: 4,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
         await callback?.onConfigure?.call(database);
@@ -128,7 +130,7 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `students` (`id` TEXT NOT NULL, `upi` TEXT NOT NULL, `full_name` TEXT NOT NULL, `gender` TEXT NOT NULL, `dob` TEXT NOT NULL, `grade` TEXT NOT NULL, `class_id` TEXT NOT NULL, `parent_id` TEXT, `photo_url` TEXT, `created_at` INTEGER NOT NULL, `synced` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `learning_areas` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `grade_band` TEXT NOT NULL, `category` TEXT NOT NULL, PRIMARY KEY (`id`))');
+            'CREATE TABLE IF NOT EXISTS `learning_areas` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `grade_band` TEXT NOT NULL, `category` TEXT NOT NULL, `department_id` TEXT, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `strands` (`id` TEXT NOT NULL, `learning_area_id` TEXT NOT NULL, `strand_name` TEXT NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
@@ -136,7 +138,7 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `school_classes` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `grade` TEXT NOT NULL, `teacher_id` TEXT, `academic_year` TEXT NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `assessments` (`id` TEXT NOT NULL, `student_id` TEXT NOT NULL, `sub_strand_id` TEXT NOT NULL, `teacher_id` TEXT NOT NULL, `score` INTEGER NOT NULL, `teacher_remarks` TEXT, `evidence_path` TEXT, `term` INTEGER NOT NULL, `academic_year` TEXT NOT NULL, `date_recorded` INTEGER NOT NULL, `is_moderated` INTEGER NOT NULL, `moderated_by` TEXT, `synced` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+            'CREATE TABLE IF NOT EXISTS `assessments` (`id` TEXT NOT NULL, `student_id` TEXT NOT NULL, `sub_strand_id` TEXT NOT NULL, `teacher_id` TEXT NOT NULL, `score` INTEGER NOT NULL, `teacher_remarks` TEXT, `evidence_path` TEXT, `term` INTEGER NOT NULL, `academic_year` TEXT NOT NULL, `date_recorded` INTEGER NOT NULL, `is_moderated` INTEGER NOT NULL, `moderated_by` TEXT, `assessment_type` TEXT NOT NULL, `synced` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `core_competencies` (`id` TEXT NOT NULL, `student_id` TEXT NOT NULL, `teacher_id` TEXT NOT NULL, `competency` TEXT NOT NULL, `score` INTEGER NOT NULL, `term` INTEGER NOT NULL, `academic_year` TEXT NOT NULL, `remarks` TEXT, `synced` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
@@ -205,6 +207,14 @@ class _$AppDatabase extends AppDatabase {
             'CREATE TABLE IF NOT EXISTS `staff_attendance` (`id` TEXT NOT NULL, `staff_id` TEXT NOT NULL, `date` INTEGER NOT NULL, `clock_in` INTEGER NOT NULL, `clock_out` INTEGER, `notes` TEXT, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `teaching_assignments` (`id` TEXT NOT NULL, `teacherId` TEXT NOT NULL, `classId` TEXT NOT NULL, `subjectId` TEXT NOT NULL, `academicYear` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `departments` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `created_by` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `status` TEXT NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `department_members` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `department_id` TEXT NOT NULL, `teacher_id` TEXT NOT NULL, `role` TEXT NOT NULL, `assigned_at` INTEGER NOT NULL, FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `subject_term_approvals` (`id` TEXT NOT NULL, `class_id` TEXT NOT NULL, `subject_id` TEXT NOT NULL, `term` INTEGER NOT NULL, `year` TEXT NOT NULL, `status` TEXT NOT NULL, `teacher_id` TEXT NOT NULL, `last_updated` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `approval_logs` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `entity_type` TEXT NOT NULL, `entity_id` TEXT NOT NULL, `action` TEXT NOT NULL, `performed_by` TEXT NOT NULL, `comments` TEXT, `timestamp` INTEGER NOT NULL)');
         await database.execute(
             'CREATE UNIQUE INDEX `index_teacher_subject_capabilities_teacher_id_subject_id` ON `teacher_subject_capabilities` (`teacher_id`, `subject_id`)');
         await database.execute(
@@ -295,6 +305,11 @@ class _$AppDatabase extends AppDatabase {
   @override
   MessagingDao get messagingDao {
     return _messagingDaoInstance ??= _$MessagingDao(database, changeListener);
+  }
+
+  @override
+  DepartmentDao get departmentDao {
+    return _departmentDaoInstance ??= _$DepartmentDao(database, changeListener);
   }
 }
 
@@ -604,6 +619,31 @@ class _$StudentDao extends StudentDao {
   }
 
   @override
+  Future<List<StudentModel>> findByClasses(List<String> classIds) async {
+    const offset = 1;
+    final _sqliteVariablesForClassIds =
+        Iterable<String>.generate(classIds.length, (i) => '?${i + offset}')
+            .join(',');
+    return _queryAdapter.queryList(
+        'SELECT * FROM students WHERE class_id IN (' +
+            _sqliteVariablesForClassIds +
+            ') ORDER BY full_name',
+        mapper: (Map<String, Object?> row) => StudentModel(
+            id: row['id'] as String,
+            upi: row['upi'] as String,
+            fullName: row['full_name'] as String,
+            gender: row['gender'] as String,
+            dob: row['dob'] as String,
+            grade: row['grade'] as String,
+            classId: row['class_id'] as String,
+            parentId: row['parent_id'] as String?,
+            photoUrl: row['photo_url'] as String?,
+            createdAt: row['created_at'] as int,
+            synced: row['synced'] as int),
+        arguments: [...classIds]);
+  }
+
+  @override
   Future<List<StudentModel>> findByGrade(String grade) async {
     return _queryAdapter.queryList(
         'SELECT * FROM students WHERE grade = ?1 ORDER BY full_name',
@@ -653,6 +693,14 @@ class _$StudentDao extends StudentDao {
   Future<int?> countAll() async {
     return _queryAdapter.query('SELECT COUNT(*) FROM students',
         mapper: (Map<String, Object?> row) => row.values.first as int);
+  }
+
+  @override
+  Future<int?> countByClass(String classId) async {
+    return _queryAdapter.query(
+        'SELECT COUNT(*) FROM students WHERE class_id = ?1',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
+        arguments: [classId]);
   }
 
   @override
@@ -734,6 +782,7 @@ class _$AssessmentDao extends AssessmentDao {
                   'date_recorded': item.dateRecorded,
                   'is_moderated': item.isModerated,
                   'moderated_by': item.moderatedBy,
+                  'assessment_type': item.assessmentType,
                   'synced': item.synced
                 }),
         _coreCompetencyModelInsertionAdapter = InsertionAdapter(
@@ -782,6 +831,7 @@ class _$AssessmentDao extends AssessmentDao {
                   'date_recorded': item.dateRecorded,
                   'is_moderated': item.isModerated,
                   'moderated_by': item.moderatedBy,
+                  'assessment_type': item.assessmentType,
                   'synced': item.synced
                 }),
         _coreCompetencyModelUpdateAdapter = UpdateAdapter(
@@ -843,7 +893,7 @@ class _$AssessmentDao extends AssessmentDao {
   ) async {
     return _queryAdapter.queryList(
         'SELECT * FROM assessments     WHERE student_id = ?1 AND term = ?2 AND academic_year = ?3     ORDER BY date_recorded DESC',
-        mapper: (Map<String, Object?> row) => AssessmentModel(id: row['id'] as String, studentId: row['student_id'] as String, subStrandId: row['sub_strand_id'] as String, teacherId: row['teacher_id'] as String, score: row['score'] as int, teacherRemarks: row['teacher_remarks'] as String?, evidencePath: row['evidence_path'] as String?, term: row['term'] as int, academicYear: row['academic_year'] as String, dateRecorded: row['date_recorded'] as int, isModerated: row['is_moderated'] as int, moderatedBy: row['moderated_by'] as String?, synced: row['synced'] as int),
+        mapper: (Map<String, Object?> row) => AssessmentModel(id: row['id'] as String, studentId: row['student_id'] as String, subStrandId: row['sub_strand_id'] as String, teacherId: row['teacher_id'] as String, score: row['score'] as int, assessmentType: row['assessment_type'] as String, teacherRemarks: row['teacher_remarks'] as String?, evidencePath: row['evidence_path'] as String?, term: row['term'] as int, academicYear: row['academic_year'] as String, dateRecorded: row['date_recorded'] as int, isModerated: row['is_moderated'] as int, moderatedBy: row['moderated_by'] as String?, synced: row['synced'] as int),
         arguments: [studentId, term, year]);
   }
 
@@ -854,7 +904,7 @@ class _$AssessmentDao extends AssessmentDao {
   ) async {
     return _queryAdapter.query(
         'SELECT * FROM assessments     WHERE student_id = ?1 AND sub_strand_id = ?2     ORDER BY date_recorded DESC LIMIT 1',
-        mapper: (Map<String, Object?> row) => AssessmentModel(id: row['id'] as String, studentId: row['student_id'] as String, subStrandId: row['sub_strand_id'] as String, teacherId: row['teacher_id'] as String, score: row['score'] as int, teacherRemarks: row['teacher_remarks'] as String?, evidencePath: row['evidence_path'] as String?, term: row['term'] as int, academicYear: row['academic_year'] as String, dateRecorded: row['date_recorded'] as int, isModerated: row['is_moderated'] as int, moderatedBy: row['moderated_by'] as String?, synced: row['synced'] as int),
+        mapper: (Map<String, Object?> row) => AssessmentModel(id: row['id'] as String, studentId: row['student_id'] as String, subStrandId: row['sub_strand_id'] as String, teacherId: row['teacher_id'] as String, score: row['score'] as int, assessmentType: row['assessment_type'] as String, teacherRemarks: row['teacher_remarks'] as String?, evidencePath: row['evidence_path'] as String?, term: row['term'] as int, academicYear: row['academic_year'] as String, dateRecorded: row['date_recorded'] as int, isModerated: row['is_moderated'] as int, moderatedBy: row['moderated_by'] as String?, synced: row['synced'] as int),
         arguments: [studentId, subStrandId]);
   }
 
@@ -866,7 +916,7 @@ class _$AssessmentDao extends AssessmentDao {
   ) async {
     return _queryAdapter.queryList(
         'SELECT * FROM assessments     WHERE teacher_id = ?1 AND term = ?2 AND academic_year = ?3     ORDER BY date_recorded DESC',
-        mapper: (Map<String, Object?> row) => AssessmentModel(id: row['id'] as String, studentId: row['student_id'] as String, subStrandId: row['sub_strand_id'] as String, teacherId: row['teacher_id'] as String, score: row['score'] as int, teacherRemarks: row['teacher_remarks'] as String?, evidencePath: row['evidence_path'] as String?, term: row['term'] as int, academicYear: row['academic_year'] as String, dateRecorded: row['date_recorded'] as int, isModerated: row['is_moderated'] as int, moderatedBy: row['moderated_by'] as String?, synced: row['synced'] as int),
+        mapper: (Map<String, Object?> row) => AssessmentModel(id: row['id'] as String, studentId: row['student_id'] as String, subStrandId: row['sub_strand_id'] as String, teacherId: row['teacher_id'] as String, score: row['score'] as int, assessmentType: row['assessment_type'] as String, teacherRemarks: row['teacher_remarks'] as String?, evidencePath: row['evidence_path'] as String?, term: row['term'] as int, academicYear: row['academic_year'] as String, dateRecorded: row['date_recorded'] as int, isModerated: row['is_moderated'] as int, moderatedBy: row['moderated_by'] as String?, synced: row['synced'] as int),
         arguments: [teacherId, term, year]);
   }
 
@@ -879,6 +929,7 @@ class _$AssessmentDao extends AssessmentDao {
             subStrandId: row['sub_strand_id'] as String,
             teacherId: row['teacher_id'] as String,
             score: row['score'] as int,
+            assessmentType: row['assessment_type'] as String,
             teacherRemarks: row['teacher_remarks'] as String?,
             evidencePath: row['evidence_path'] as String?,
             term: row['term'] as int,
@@ -913,7 +964,7 @@ class _$AssessmentDao extends AssessmentDao {
       String deptId) async {
     return _queryAdapter.queryList(
         'SELECT a.* FROM assessments a     JOIN users u ON a.teacher_id = u.id     WHERE u.department_id = ?1 AND a.is_moderated = 1',
-        mapper: (Map<String, Object?> row) => AssessmentModel(id: row['id'] as String, studentId: row['student_id'] as String, subStrandId: row['sub_strand_id'] as String, teacherId: row['teacher_id'] as String, score: row['score'] as int, teacherRemarks: row['teacher_remarks'] as String?, evidencePath: row['evidence_path'] as String?, term: row['term'] as int, academicYear: row['academic_year'] as String, dateRecorded: row['date_recorded'] as int, isModerated: row['is_moderated'] as int, moderatedBy: row['moderated_by'] as String?, synced: row['synced'] as int),
+        mapper: (Map<String, Object?> row) => AssessmentModel(id: row['id'] as String, studentId: row['student_id'] as String, subStrandId: row['sub_strand_id'] as String, teacherId: row['teacher_id'] as String, score: row['score'] as int, assessmentType: row['assessment_type'] as String, teacherRemarks: row['teacher_remarks'] as String?, evidencePath: row['evidence_path'] as String?, term: row['term'] as int, academicYear: row['academic_year'] as String, dateRecorded: row['date_recorded'] as int, isModerated: row['is_moderated'] as int, moderatedBy: row['moderated_by'] as String?, synced: row['synced'] as int),
         arguments: [deptId]);
   }
 
@@ -974,6 +1025,7 @@ class _$AssessmentDao extends AssessmentDao {
             subStrandId: row['sub_strand_id'] as String,
             teacherId: row['teacher_id'] as String,
             score: row['score'] as int,
+            assessmentType: row['assessment_type'] as String,
             teacherRemarks: row['teacher_remarks'] as String?,
             evidencePath: row['evidence_path'] as String?,
             term: row['term'] as int,
@@ -1544,7 +1596,8 @@ class _$CurriculumDao extends CurriculumDao {
                   'id': item.id,
                   'name': item.name,
                   'grade_band': item.gradeBand,
-                  'category': item.category
+                  'category': item.category,
+                  'department_id': item.departmentId
                 }),
         _strandModelInsertionAdapter = InsertionAdapter(
             database,
@@ -1608,7 +1661,8 @@ class _$CurriculumDao extends CurriculumDao {
             id: row['id'] as String,
             name: row['name'] as String,
             gradeBand: row['grade_band'] as String,
-            category: row['category'] as String),
+            category: row['category'] as String,
+            departmentId: row['department_id'] as String?),
         arguments: [gradeBand]);
   }
 
@@ -1620,7 +1674,8 @@ class _$CurriculumDao extends CurriculumDao {
             id: row['id'] as String,
             name: row['name'] as String,
             gradeBand: row['grade_band'] as String,
-            category: row['category'] as String));
+            category: row['category'] as String,
+            departmentId: row['department_id'] as String?));
   }
 
   @override
@@ -1667,6 +1722,12 @@ class _$CurriculumDao extends CurriculumDao {
   Future<int?> countAreas() async {
     return _queryAdapter.query('SELECT COUNT(*) FROM learning_areas',
         mapper: (Map<String, Object?> row) => row.values.first as int);
+  }
+
+  @override
+  Future<void> clearTestSubjects() async {
+    await _queryAdapter
+        .queryNoReturn('DELETE FROM learning_areas WHERE id LIKE \'SUB_%\'');
   }
 
   @override
@@ -3246,5 +3307,321 @@ class _$MessagingDao extends MessagingDao {
   Future<void> insertMessage(MessageModel message) async {
     await _messageModelInsertionAdapter.insert(
         message, OnConflictStrategy.abort);
+  }
+}
+
+class _$DepartmentDao extends DepartmentDao {
+  _$DepartmentDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
+        _departmentModelInsertionAdapter = InsertionAdapter(
+            database,
+            'departments',
+            (DepartmentModel item) => <String, Object?>{
+                  'id': item.id,
+                  'name': item.name,
+                  'description': item.description,
+                  'created_by': item.createdBy,
+                  'created_at': item.createdAt,
+                  'status': item.status
+                }),
+        _departmentMemberModelInsertionAdapter = InsertionAdapter(
+            database,
+            'department_members',
+            (DepartmentMemberModel item) => <String, Object?>{
+                  'id': item.id,
+                  'department_id': item.departmentId,
+                  'teacher_id': item.teacherId,
+                  'role': item.role,
+                  'assigned_at': item.assignedAt
+                }),
+        _subjectTermApprovalModelInsertionAdapter = InsertionAdapter(
+            database,
+            'subject_term_approvals',
+            (SubjectTermApprovalModel item) => <String, Object?>{
+                  'id': item.id,
+                  'class_id': item.classId,
+                  'subject_id': item.subjectId,
+                  'term': item.term,
+                  'year': item.year,
+                  'status': item.status,
+                  'teacher_id': item.teacherId,
+                  'last_updated': item.lastUpdated
+                }),
+        _approvalLogModelInsertionAdapter = InsertionAdapter(
+            database,
+            'approval_logs',
+            (ApprovalLogModel item) => <String, Object?>{
+                  'id': item.id,
+                  'entity_type': item.entityType,
+                  'entity_id': item.entityId,
+                  'action': item.action,
+                  'performed_by': item.performedBy,
+                  'comments': item.comments,
+                  'timestamp': item.timestamp
+                }),
+        _departmentModelUpdateAdapter = UpdateAdapter(
+            database,
+            'departments',
+            ['id'],
+            (DepartmentModel item) => <String, Object?>{
+                  'id': item.id,
+                  'name': item.name,
+                  'description': item.description,
+                  'created_by': item.createdBy,
+                  'created_at': item.createdAt,
+                  'status': item.status
+                }),
+        _subjectTermApprovalModelUpdateAdapter = UpdateAdapter(
+            database,
+            'subject_term_approvals',
+            ['id'],
+            (SubjectTermApprovalModel item) => <String, Object?>{
+                  'id': item.id,
+                  'class_id': item.classId,
+                  'subject_id': item.subjectId,
+                  'term': item.term,
+                  'year': item.year,
+                  'status': item.status,
+                  'teacher_id': item.teacherId,
+                  'last_updated': item.lastUpdated
+                }),
+        _departmentMemberModelDeletionAdapter = DeletionAdapter(
+            database,
+            'department_members',
+            ['id'],
+            (DepartmentMemberModel item) => <String, Object?>{
+                  'id': item.id,
+                  'department_id': item.departmentId,
+                  'teacher_id': item.teacherId,
+                  'role': item.role,
+                  'assigned_at': item.assignedAt
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<DepartmentModel> _departmentModelInsertionAdapter;
+
+  final InsertionAdapter<DepartmentMemberModel>
+      _departmentMemberModelInsertionAdapter;
+
+  final InsertionAdapter<SubjectTermApprovalModel>
+      _subjectTermApprovalModelInsertionAdapter;
+
+  final InsertionAdapter<ApprovalLogModel> _approvalLogModelInsertionAdapter;
+
+  final UpdateAdapter<DepartmentModel> _departmentModelUpdateAdapter;
+
+  final UpdateAdapter<SubjectTermApprovalModel>
+      _subjectTermApprovalModelUpdateAdapter;
+
+  final DeletionAdapter<DepartmentMemberModel>
+      _departmentMemberModelDeletionAdapter;
+
+  @override
+  Future<List<DepartmentModel>> getAllActiveDepartments() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM departments WHERE status = \"active\"',
+        mapper: (Map<String, Object?> row) => DepartmentModel(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            description: row['description'] as String,
+            createdBy: row['created_by'] as String,
+            createdAt: row['created_at'] as int,
+            status: row['status'] as String));
+  }
+
+  @override
+  Future<DepartmentModel?> getDepartmentById(String id) async {
+    return _queryAdapter.query('SELECT * FROM departments WHERE id = ?1',
+        mapper: (Map<String, Object?> row) => DepartmentModel(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            description: row['description'] as String,
+            createdBy: row['created_by'] as String,
+            createdAt: row['created_at'] as int,
+            status: row['status'] as String),
+        arguments: [id]);
+  }
+
+  @override
+  Future<List<DepartmentMemberModel>> getMembersByDepartment(
+      String deptId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM department_members WHERE department_id = ?1',
+        mapper: (Map<String, Object?> row) => DepartmentMemberModel(
+            id: row['id'] as int?,
+            departmentId: row['department_id'] as String,
+            teacherId: row['teacher_id'] as String,
+            role: row['role'] as String,
+            assignedAt: row['assigned_at'] as int),
+        arguments: [deptId]);
+  }
+
+  @override
+  Future<List<DepartmentMemberModel>> getDepartmentsByTeacher(
+      String teacherId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM department_members WHERE teacher_id = ?1',
+        mapper: (Map<String, Object?> row) => DepartmentMemberModel(
+            id: row['id'] as int?,
+            departmentId: row['department_id'] as String,
+            teacherId: row['teacher_id'] as String,
+            role: row['role'] as String,
+            assignedAt: row['assigned_at'] as int),
+        arguments: [teacherId]);
+  }
+
+  @override
+  Future<List<LearningAreaModel>> getSubjectsByDepartment(String deptId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM learning_areas WHERE department_id = ?1',
+        mapper: (Map<String, Object?> row) => LearningAreaModel(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            gradeBand: row['grade_band'] as String,
+            category: row['category'] as String,
+            departmentId: row['department_id'] as String?),
+        arguments: [deptId]);
+  }
+
+  @override
+  Future<SubjectTermApprovalModel?> getTermApprovalById(String id) async {
+    return _queryAdapter.query(
+        'SELECT * FROM subject_term_approvals WHERE id = ?1',
+        mapper: (Map<String, Object?> row) => SubjectTermApprovalModel(
+            id: row['id'] as String,
+            classId: row['class_id'] as String,
+            subjectId: row['subject_id'] as String,
+            term: row['term'] as int,
+            year: row['year'] as String,
+            status: row['status'] as String,
+            teacherId: row['teacher_id'] as String,
+            lastUpdated: row['last_updated'] as int),
+        arguments: [id]);
+  }
+
+  @override
+  Future<SubjectTermApprovalModel?> getStatus(
+    String classId,
+    String subjectId,
+    int term,
+    String year,
+  ) async {
+    return _queryAdapter.query(
+        'SELECT * FROM subject_term_approvals WHERE class_id = ?1 AND subject_id = ?2 AND term = ?3 AND year = ?4',
+        mapper: (Map<String, Object?> row) => SubjectTermApprovalModel(id: row['id'] as String, classId: row['class_id'] as String, subjectId: row['subject_id'] as String, term: row['term'] as int, year: row['year'] as String, status: row['status'] as String, teacherId: row['teacher_id'] as String, lastUpdated: row['last_updated'] as int),
+        arguments: [classId, subjectId, term, year]);
+  }
+
+  @override
+  Future<List<SubjectTermApprovalModel>> getApprovalsByStatus(
+      String status) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM subject_term_approvals WHERE status = ?1',
+        mapper: (Map<String, Object?> row) => SubjectTermApprovalModel(
+            id: row['id'] as String,
+            classId: row['class_id'] as String,
+            subjectId: row['subject_id'] as String,
+            term: row['term'] as int,
+            year: row['year'] as String,
+            status: row['status'] as String,
+            teacherId: row['teacher_id'] as String,
+            lastUpdated: row['last_updated'] as int),
+        arguments: [status]);
+  }
+
+  @override
+  Future<List<ApprovalLogModel>> getLogsForEntity(String entityId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM approval_logs WHERE entity_id = ?1 ORDER BY timestamp DESC',
+        mapper: (Map<String, Object?> row) => ApprovalLogModel(id: row['id'] as int?, entityType: row['entity_type'] as String, entityId: row['entity_id'] as String, action: row['action'] as String, performedBy: row['performed_by'] as String, comments: row['comments'] as String?, timestamp: row['timestamp'] as int),
+        arguments: [entityId]);
+  }
+
+  @override
+  Future<void> clearHOD(String deptId) async {
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM department_members WHERE department_id = ?1 AND role = \"hod\"',
+        arguments: [deptId]);
+  }
+
+  @override
+  Future<List<DepartmentModel>> getAllDepartments() async {
+    return _queryAdapter.queryList('SELECT * FROM departments',
+        mapper: (Map<String, Object?> row) => DepartmentModel(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            description: row['description'] as String,
+            createdBy: row['created_by'] as String,
+            createdAt: row['created_at'] as int,
+            status: row['status'] as String));
+  }
+
+  @override
+  Future<List<DepartmentMemberModel>> getAllMembers() async {
+    return _queryAdapter.queryList('SELECT * FROM department_members',
+        mapper: (Map<String, Object?> row) => DepartmentMemberModel(
+            id: row['id'] as int?,
+            departmentId: row['department_id'] as String,
+            teacherId: row['teacher_id'] as String,
+            role: row['role'] as String,
+            assignedAt: row['assigned_at'] as int));
+  }
+
+  @override
+  Future<void> removeMemberFromDept(
+    String teacherId,
+    String deptId,
+  ) async {
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM department_members WHERE teacher_id = ?1 AND department_id = ?2',
+        arguments: [teacherId, deptId]);
+  }
+
+  @override
+  Future<void> insertDepartment(DepartmentModel department) async {
+    await _departmentModelInsertionAdapter.insert(
+        department, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> insertMember(DepartmentMemberModel member) async {
+    await _departmentMemberModelInsertionAdapter.insert(
+        member, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> insertTermApproval(SubjectTermApprovalModel approval) async {
+    await _subjectTermApprovalModelInsertionAdapter.insert(
+        approval, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> insertLog(ApprovalLogModel log) async {
+    await _approvalLogModelInsertionAdapter.insert(
+        log, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> updateDepartment(DepartmentModel department) async {
+    await _departmentModelUpdateAdapter.update(
+        department, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> updateTermApproval(SubjectTermApprovalModel approval) async {
+    await _subjectTermApprovalModelUpdateAdapter.update(
+        approval, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> removeMember(DepartmentMemberModel member) async {
+    await _departmentMemberModelDeletionAdapter.delete(member);
   }
 }

@@ -49,6 +49,9 @@ abstract class CurriculumDao {
   @Query('SELECT COUNT(*) FROM learning_areas')
   Future<int?> countAreas();
 
+  @Query("DELETE FROM learning_areas WHERE id LIKE 'SUB_%'")
+  Future<void> clearTestSubjects();
+
   // ── Coverage ────────────────────────────────────────────────────────────────
   @Insert(onConflict: OnConflictStrategy.replace)
   Future<void> insertCoverage(StrandCoverage coverage);

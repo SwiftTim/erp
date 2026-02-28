@@ -103,10 +103,10 @@ class TimetableEngineService {
 
       String classId = currentReq.classId;
       String subjectId = currentReq.subjectId;
-      String band = classBands[classId] ?? 'Upper Primary';
+      String band = classBands[classId] ?? 'Grade 4-6';
       // Double-teacher is BEST-EFFORT for PP1-G3 — we TRY to assign an assistant,
       // but we never block the schedule if one can't be found.
-      bool tryDoubleTeacher = band == 'Pre-Primary' || band == 'Lower Primary';
+      bool tryDoubleTeacher = band == 'PP1-PP2' || band == 'Grade 1-3';
 
       var capsForSubject = capsBySubjectAndPriority[subjectId] ?? {};
       List<int> priorities = capsForSubject.keys.toList()..sort();
