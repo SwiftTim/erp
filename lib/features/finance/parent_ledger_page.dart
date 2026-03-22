@@ -2,13 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/student_model.dart';
 import '../../data/models/finance_model.dart';
 import '../auth/auth_provider.dart';
 import '../dashboard/widgets/app_shell.dart';
-import 'dart:math';
+import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import 'widgets/mpesa_payment_dialog.dart';
 import '../../core/services/finance_pdf_service.dart';

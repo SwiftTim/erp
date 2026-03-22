@@ -148,7 +148,7 @@ class _StaffManagementPageState extends ConsumerState<StaffManagementPage> {
           future: ref.read(databaseProvider.future).then((db) => db.departmentDao.getMembersByDepartment(d.id)),
           builder: (context, snapshot) {
             final memberships = snapshot.data ?? [];
-            final hodMembership = memberships.where((m) => m.role == 'hod').firstOrNull;
+            final hodMembership = memberships.where((m) => m.role.toLowerCase() == 'hod').firstOrNull;
             
             return Card(
               margin: const EdgeInsets.only(bottom: 16),
@@ -181,7 +181,7 @@ class _StaffManagementPageState extends ConsumerState<StaffManagementPage> {
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Text('Other Members', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                   ),
-                  ...memberships.where((m) => m.role != 'hod').map((m) => _MemberTile(teacherId: m.teacherId, role: 'Member', isHOD: false)),
+                  ...memberships.where((m) => m.role.toLowerCase() != 'hod').map((m) => _MemberTile(teacherId: m.teacherId, role: 'Member', isHOD: false)),
                 ],
               ),
             );
@@ -192,7 +192,7 @@ class _StaffManagementPageState extends ConsumerState<StaffManagementPage> {
   }
 
   void _showHODSelector(DepartmentModel dept) async {
-    final teachers = _staff.where((s) => s.roleLevel <= 3).toList();
+    final teachers = _staff.where((s) => s.roleLevel <= 5).toList();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -209,9 +209,19 @@ class _StaffManagementPageState extends ConsumerState<StaffManagementPage> {
               onTap: () async {
                 Navigator.pop(ctx);
                 setState(() => _loading = true);
-                await ref.read(departmentServiceProvider).assignHOD(teachers[i].id, dept.id);
-                await _loadData();
-                setState(() => _loading = false);
+                try {
+                  await ref.read(departmentServiceProvider).assignHOD(teachers[i].id, dept.id);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Assigned ${teachers[i].name} as HOD of ${dept.name}'), backgroundColor: Colors.green));
+                  }
+                  await _loadData();
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red));
+                  }
+                } finally {
+                  if (mounted) setState(() => _loading = false);
+                }
               },
             ),
           ),

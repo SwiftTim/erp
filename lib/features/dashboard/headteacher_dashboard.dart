@@ -148,6 +148,11 @@ class HeadteacherDashboard extends ConsumerWidget {
           onPressed: () => context.push(Routes.departments),
         ),
         ActionChip(
+          avatar: const Icon(Icons.approval_outlined, size: 16),
+          label: const Text('Budget Approvals'),
+          onPressed: () => context.push(Routes.financeApprovals),
+        ),
+        ActionChip(
           avatar: const Icon(Icons.settings_outlined, size: 16),
           label: const Text('System Config'),
           onPressed: () {},

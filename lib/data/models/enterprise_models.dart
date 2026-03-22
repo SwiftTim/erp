@@ -61,40 +61,7 @@ class MemoReadRecord {
   });
 }
 
-@Entity(tableName: 'clubs')
-class ClubModel {
-  @PrimaryKey()
-  final String id;
-  final String name;
-  final String description;
-  final String advisorId; // Teacher ID
-  final String category; // "Sports", "Academic", "Art"
-
-  ClubModel({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.advisorId,
-    required this.category,
-  });
-}
-
-@Entity(tableName: 'club_memberships')
-class ClubMembership {
-  @PrimaryKey(autoGenerate: true)
-  final int? id;
-  final String clubId;
-  final String studentId;
-  final int joinedAt;
-
-  ClubMembership({
-    this.id,
-    required this.clubId,
-    required this.studentId,
-    required this.joinedAt,
-  });
-}
-
+// ── Staff Leaves ──────────────────────────────────────────────────────────
 @Entity(tableName: 'staff_leaves')
 class StaffLeave {
   @PrimaryKey()

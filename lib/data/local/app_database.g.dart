@@ -102,7 +102,21 @@ class _$AppDatabase extends AppDatabase {
 
   MessagingDao? _messagingDaoInstance;
 
+  ChatDao? _chatDaoInstance;
+
+  CalendarDao? _calendarDaoInstance;
+
+  NotificationDao? _notificationDaoInstance;
+
   DepartmentDao? _departmentDaoInstance;
+
+  DeptActivityDao? _deptActivityDaoInstance;
+
+  ClubDao? _clubDaoInstance;
+
+  TodDao? _todDaoInstance;
+
+  FinanceErpDao? _financeErpDaoInstance;
 
   Future<sqflite.Database> open(
     String path,
@@ -110,7 +124,7 @@ class _$AppDatabase extends AppDatabase {
     Callback? callback,
   ]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 4,
+      version: 16,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
         await callback?.onConfigure?.call(database);
@@ -184,8 +198,6 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `attendance_sessions` (`id` TEXT NOT NULL, `slot_id` TEXT NOT NULL, `teacher_id` TEXT NOT NULL, `class_id` TEXT NOT NULL, `subject_id` TEXT NOT NULL, `period` INTEGER NOT NULL, `date` TEXT NOT NULL, `is_substitute` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `teacher_clubs` (`id` TEXT NOT NULL, `teacher_id` TEXT NOT NULL, `club_name` TEXT NOT NULL, PRIMARY KEY (`id`))');
-        await database.execute(
             'CREATE TABLE IF NOT EXISTS `inventory_assets` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `category` TEXT NOT NULL, `location` TEXT NOT NULL, `quantity` INTEGER NOT NULL, `condition` TEXT NOT NULL, `unit_cost` REAL, `purchase_date` INTEGER, `assigned_to` TEXT, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `asset_maintenance_logs` (`id` TEXT NOT NULL, `asset_id` TEXT NOT NULL, `description` TEXT NOT NULL, `cost` REAL NOT NULL, `serviced_at` INTEGER NOT NULL, `recorded_by` TEXT NOT NULL, PRIMARY KEY (`id`))');
@@ -198,15 +210,21 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `system_activity_logs` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `userId` TEXT NOT NULL, `action` TEXT NOT NULL, `module` TEXT NOT NULL, `details` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `ipAddress` TEXT NOT NULL)');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `clubs` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `advisorId` TEXT NOT NULL, `category` TEXT NOT NULL, PRIMARY KEY (`id`))');
-        await database.execute(
-            'CREATE TABLE IF NOT EXISTS `club_memberships` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `clubId` TEXT NOT NULL, `studentId` TEXT NOT NULL, `joinedAt` INTEGER NOT NULL)');
-        await database.execute(
             'CREATE TABLE IF NOT EXISTS `staff_leaves` (`id` TEXT NOT NULL, `staffId` TEXT NOT NULL, `leaveType` TEXT NOT NULL, `startDate` INTEGER NOT NULL, `endDate` INTEGER NOT NULL, `reason` TEXT NOT NULL, `status` TEXT NOT NULL, `approvedBy` TEXT, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `staff_attendance` (`id` TEXT NOT NULL, `staff_id` TEXT NOT NULL, `date` INTEGER NOT NULL, `clock_in` INTEGER NOT NULL, `clock_out` INTEGER, `notes` TEXT, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `teaching_assignments` (`id` TEXT NOT NULL, `teacherId` TEXT NOT NULL, `classId` TEXT NOT NULL, `subjectId` TEXT NOT NULL, `academicYear` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `clubs` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `category` TEXT NOT NULL, `description` TEXT NOT NULL, `patron_id` TEXT, `assistant_patron_id` TEXT, `meeting_day` TEXT, `meeting_time` TEXT, `status` TEXT NOT NULL, `capacity_limit` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `club_members` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `club_id` TEXT NOT NULL, `student_id` TEXT NOT NULL, `role` TEXT NOT NULL, `joined_at` INTEGER NOT NULL, `joined_by` TEXT NOT NULL, `consent_form_signed` INTEGER NOT NULL, `parent_contact_verified` INTEGER NOT NULL, FOREIGN KEY (`club_id`) REFERENCES `clubs` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `club_activities` (`id` TEXT NOT NULL, `club_id` TEXT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `type` TEXT NOT NULL, `scheduled_at` INTEGER NOT NULL, `venue` TEXT NOT NULL, `status` TEXT NOT NULL, `recorded_at` INTEGER NOT NULL, FOREIGN KEY (`club_id`) REFERENCES `clubs` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `club_attendance` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `activity_id` TEXT NOT NULL, `student_id` TEXT NOT NULL, `status` TEXT NOT NULL, `remarks` TEXT, FOREIGN KEY (`activity_id`) REFERENCES `club_activities` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `club_reports` (`id` TEXT NOT NULL, `club_id` TEXT NOT NULL, `term` INTEGER NOT NULL, `year` TEXT NOT NULL, `content` TEXT NOT NULL, `submitted_at` INTEGER NOT NULL, `patron_id` TEXT NOT NULL, `status` TEXT NOT NULL, FOREIGN KEY (`club_id`) REFERENCES `clubs` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `departments` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `description` TEXT NOT NULL, `created_by` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `status` TEXT NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
@@ -215,6 +233,70 @@ class _$AppDatabase extends AppDatabase {
             'CREATE TABLE IF NOT EXISTS `subject_term_approvals` (`id` TEXT NOT NULL, `class_id` TEXT NOT NULL, `subject_id` TEXT NOT NULL, `term` INTEGER NOT NULL, `year` TEXT NOT NULL, `status` TEXT NOT NULL, `teacher_id` TEXT NOT NULL, `last_updated` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `approval_logs` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `entity_type` TEXT NOT NULL, `entity_id` TEXT NOT NULL, `action` TEXT NOT NULL, `performed_by` TEXT NOT NULL, `comments` TEXT, `timestamp` INTEGER NOT NULL)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `dept_documents` (`id` TEXT NOT NULL, `department_id` TEXT NOT NULL, `title` TEXT NOT NULL, `category` TEXT NOT NULL, `file_path` TEXT, `file_name` TEXT NOT NULL, `description` TEXT, `uploaded_by` TEXT NOT NULL, `uploaded_at` INTEGER NOT NULL, `status` TEXT NOT NULL, FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `dept_meetings` (`id` TEXT NOT NULL, `department_id` TEXT NOT NULL, `title` TEXT NOT NULL, `agenda` TEXT NOT NULL, `scheduled_at` INTEGER NOT NULL, `venue` TEXT NOT NULL, `minutes` TEXT, `organized_by` TEXT NOT NULL, `status` TEXT NOT NULL, FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `dept_activities` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `department_id` TEXT NOT NULL, `module_type` TEXT NOT NULL, `title` TEXT NOT NULL, `data` TEXT, `recorded_by` TEXT NOT NULL, `recorded_at` INTEGER NOT NULL, `status` TEXT NOT NULL, `grade` TEXT, `subject` TEXT, FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `dept_compliance` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `department_id` TEXT NOT NULL, `item` TEXT NOT NULL, `is_done` INTEGER NOT NULL, `due_date` INTEGER, `completed_by` TEXT, `completed_at` INTEGER, `term` TEXT NOT NULL, `year` TEXT NOT NULL, FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON UPDATE NO ACTION ON DELETE NO ACTION)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `duty_roster` (`id` TEXT NOT NULL, `teacher_id` TEXT NOT NULL, `week_number` INTEGER NOT NULL, `start_date` INTEGER NOT NULL, `end_date` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `tod_records` (`id` TEXT NOT NULL, `student_id` TEXT NOT NULL, `offence` TEXT NOT NULL, `punishment` TEXT NOT NULL, `remarks` TEXT, `teacher_id` TEXT NOT NULL, `date` INTEGER NOT NULL, `status` TEXT NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `student_behavior` (`student_id` TEXT NOT NULL, `weekly_offences` INTEGER NOT NULL, `status` TEXT NOT NULL, PRIMARY KEY (`student_id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `chat_messages` (`id` TEXT NOT NULL, `sender_id` TEXT NOT NULL, `receiver_id` TEXT, `group_id` TEXT, `message` TEXT NOT NULL, `file_path` TEXT, `file_name` TEXT, `file_type` TEXT, `reply_to_id` TEXT, `status` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `chat_groups` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `dept_id` TEXT, `created_by` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `icon_code` INTEGER, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `chat_group_members` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `group_id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `joined_at` INTEGER NOT NULL)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `chat_read_receipts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `message_id` TEXT NOT NULL, `user_id` TEXT NOT NULL, `read_at` INTEGER NOT NULL)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `calendar_events` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `event_type` TEXT NOT NULL, `start_date` INTEGER NOT NULL, `end_date` INTEGER NOT NULL, `description` TEXT, `priority` TEXT NOT NULL, `created_by` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `reminder_days` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `app_notifications` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `user_id` TEXT NOT NULL, `title` TEXT NOT NULL, `message` TEXT NOT NULL, `link` TEXT, `notif_type` TEXT NOT NULL, `reference_id` TEXT, `is_read` INTEGER NOT NULL, `created_at` INTEGER NOT NULL)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `staff` (`staff_id` TEXT NOT NULL, `name` TEXT NOT NULL, `role` TEXT NOT NULL, `department` TEXT NOT NULL, `employment_type` TEXT NOT NULL, `bank_name` TEXT NOT NULL, `account_no` TEXT NOT NULL, `bank_branch` TEXT NOT NULL, `date_hired` INTEGER NOT NULL, PRIMARY KEY (`staff_id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `fee_structure` (`fee_id` TEXT NOT NULL, `fee_name` TEXT NOT NULL, `amount` REAL NOT NULL, `term` INTEGER NOT NULL, `is_optional` INTEGER NOT NULL, PRIMARY KEY (`fee_id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `student_billing` (`billing_id` TEXT NOT NULL, `student_id` TEXT NOT NULL, `term` INTEGER NOT NULL, `tuition` REAL NOT NULL, `transport` REAL NOT NULL, `meals` REAL NOT NULL, `swimming` REAL NOT NULL, `other_charges` REAL NOT NULL, `total_amount` REAL NOT NULL, `balance` REAL NOT NULL, `status` TEXT NOT NULL, PRIMARY KEY (`billing_id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `fee_payments` (`payment_id` TEXT NOT NULL, `student_id` TEXT NOT NULL, `amount_paid` REAL NOT NULL, `payment_method` TEXT NOT NULL, `transaction_code` TEXT NOT NULL, `date_paid` INTEGER NOT NULL, `received_by` TEXT NOT NULL, PRIMARY KEY (`payment_id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `amenities` (`amenity_id` TEXT NOT NULL, `amenity_name` TEXT NOT NULL, `fee_amount` REAL NOT NULL, `billing_type` TEXT NOT NULL, PRIMARY KEY (`amenity_id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `student_amenities` (`id` TEXT NOT NULL, `student_id` TEXT NOT NULL, `amenity_id` TEXT NOT NULL, `term` INTEGER NOT NULL, `status` TEXT NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `payroll` (`payroll_id` TEXT NOT NULL, `staff_id` TEXT NOT NULL, `month` TEXT NOT NULL, `basic_salary` REAL NOT NULL, `allowances` REAL NOT NULL, `deductions` REAL NOT NULL, `nssf` REAL NOT NULL, `shif` REAL NOT NULL, `housing_levy` REAL NOT NULL, `paye` REAL NOT NULL, `loan_deduction` REAL NOT NULL, `net_salary` REAL NOT NULL, `status` TEXT NOT NULL, `processed_by` TEXT NOT NULL, `date_processed` INTEGER NOT NULL, PRIMARY KEY (`payroll_id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `staff_loans` (`loan_id` TEXT NOT NULL, `staff_id` TEXT NOT NULL, `loan_amount` REAL NOT NULL, `interest_rate` REAL NOT NULL, `repayment_period` INTEGER NOT NULL, `monthly_deduction` REAL NOT NULL, `total_repayment` REAL NOT NULL, `remaining_balance` REAL NOT NULL, `status` TEXT NOT NULL, `approved_by` TEXT, `issue_date` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY (`loan_id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `loan_repayments` (`repayment_id` TEXT NOT NULL, `loan_id` TEXT NOT NULL, `payroll_id` TEXT, `amount` REAL NOT NULL, `payment_date` INTEGER NOT NULL, `deducted_from_payroll` INTEGER NOT NULL, PRIMARY KEY (`repayment_id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `expenses` (`expense_id` TEXT NOT NULL, `category` TEXT NOT NULL, `description` TEXT NOT NULL, `amount` REAL NOT NULL, `payment_method` TEXT NOT NULL, `date` INTEGER NOT NULL, `approved_by` TEXT NOT NULL, PRIMARY KEY (`expense_id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `assets` (`asset_id` TEXT NOT NULL, `asset_name` TEXT NOT NULL, `category` TEXT NOT NULL, `purchase_date` INTEGER NOT NULL, `purchase_value` REAL NOT NULL, `condition` TEXT NOT NULL, `status` TEXT NOT NULL, PRIMARY KEY (`asset_id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `repairs` (`repair_id` TEXT NOT NULL, `asset_id` TEXT NOT NULL, `description` TEXT NOT NULL, `repair_cost` REAL NOT NULL, `repair_date` INTEGER NOT NULL, `technician` TEXT NOT NULL, PRIMARY KEY (`repair_id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `resource_requests` (`request_id` TEXT NOT NULL, `teacher_id` TEXT NOT NULL, `purpose` TEXT NOT NULL, `status` TEXT NOT NULL, `total_budget` REAL NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY (`request_id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `resource_request_items` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `request_id` TEXT NOT NULL, `item_name` TEXT NOT NULL, `quantity` INTEGER NOT NULL, `price` REAL NOT NULL, `total` REAL NOT NULL)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `budget_approvals` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `request_id` TEXT NOT NULL, `approved_by` TEXT NOT NULL, `decision` TEXT NOT NULL, `comments` TEXT NOT NULL, `date` INTEGER NOT NULL)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `salary_components` (`component_id` TEXT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `description` TEXT, `is_statutory` INTEGER NOT NULL, `is_tax_applicable` INTEGER NOT NULL, `is_attendance_linked` INTEGER NOT NULL, `default_amount` REAL NOT NULL, PRIMARY KEY (`component_id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `salary_structures` (`structure_id` TEXT NOT NULL, `name` TEXT NOT NULL, `company` TEXT NOT NULL, `is_active` INTEGER NOT NULL, `total_earnings` REAL NOT NULL, `total_deductions` REAL NOT NULL, PRIMARY KEY (`structure_id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `salary_structure_assignments` (`assignment_id` TEXT NOT NULL, `staff_id` TEXT NOT NULL, `structure_id` TEXT NOT NULL, `from_date` INTEGER NOT NULL, `base_salary` REAL NOT NULL, PRIMARY KEY (`assignment_id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `payroll_entries` (`payroll_entry_id` TEXT NOT NULL, `month` TEXT NOT NULL, `structure_id` TEXT NOT NULL, `status` TEXT NOT NULL, `posting_date` INTEGER NOT NULL, `count_processed` INTEGER NOT NULL, PRIMARY KEY (`payroll_entry_id`))');
         await database.execute(
             'CREATE UNIQUE INDEX `index_teacher_subject_capabilities_teacher_id_subject_id` ON `teacher_subject_capabilities` (`teacher_id`, `subject_id`)');
         await database.execute(
@@ -308,8 +390,45 @@ class _$AppDatabase extends AppDatabase {
   }
 
   @override
+  ChatDao get chatDao {
+    return _chatDaoInstance ??= _$ChatDao(database, changeListener);
+  }
+
+  @override
+  CalendarDao get calendarDao {
+    return _calendarDaoInstance ??= _$CalendarDao(database, changeListener);
+  }
+
+  @override
+  NotificationDao get notificationDao {
+    return _notificationDaoInstance ??=
+        _$NotificationDao(database, changeListener);
+  }
+
+  @override
   DepartmentDao get departmentDao {
     return _departmentDaoInstance ??= _$DepartmentDao(database, changeListener);
+  }
+
+  @override
+  DeptActivityDao get deptActivityDao {
+    return _deptActivityDaoInstance ??=
+        _$DeptActivityDao(database, changeListener);
+  }
+
+  @override
+  ClubDao get clubDao {
+    return _clubDaoInstance ??= _$ClubDao(database, changeListener);
+  }
+
+  @override
+  TodDao get todDao {
+    return _todDaoInstance ??= _$TodDao(database, changeListener);
+  }
+
+  @override
+  FinanceErpDao get financeErpDao {
+    return _financeErpDaoInstance ??= _$FinanceErpDao(database, changeListener);
   }
 }
 
@@ -2396,25 +2515,6 @@ class _$EnterpriseDao extends EnterpriseDao {
                   'userId': item.userId,
                   'readAt': item.readAt
                 }),
-        _clubModelInsertionAdapter = InsertionAdapter(
-            database,
-            'clubs',
-            (ClubModel item) => <String, Object?>{
-                  'id': item.id,
-                  'name': item.name,
-                  'description': item.description,
-                  'advisorId': item.advisorId,
-                  'category': item.category
-                }),
-        _clubMembershipInsertionAdapter = InsertionAdapter(
-            database,
-            'club_memberships',
-            (ClubMembership item) => <String, Object?>{
-                  'id': item.id,
-                  'clubId': item.clubId,
-                  'studentId': item.studentId,
-                  'joinedAt': item.joinedAt
-                }),
         _staffLeaveInsertionAdapter = InsertionAdapter(
             database,
             'staff_leaves',
@@ -2543,10 +2643,6 @@ class _$EnterpriseDao extends EnterpriseDao {
 
   final InsertionAdapter<MemoReadRecord> _memoReadRecordInsertionAdapter;
 
-  final InsertionAdapter<ClubModel> _clubModelInsertionAdapter;
-
-  final InsertionAdapter<ClubMembership> _clubMembershipInsertionAdapter;
-
   final InsertionAdapter<StaffLeave> _staffLeaveInsertionAdapter;
 
   final InsertionAdapter<InventoryAsset> _inventoryAssetInsertionAdapter;
@@ -2622,25 +2718,6 @@ class _$EnterpriseDao extends EnterpriseDao {
         'SELECT COUNT(*) FROM memo_reads WHERE memoId = ?1',
         mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [memoId]);
-  }
-
-  @override
-  Future<List<ClubModel>> findAllClubs() async {
-    return _queryAdapter.queryList('SELECT * FROM clubs',
-        mapper: (Map<String, Object?> row) => ClubModel(
-            id: row['id'] as String,
-            name: row['name'] as String,
-            description: row['description'] as String,
-            advisorId: row['advisorId'] as String,
-            category: row['category'] as String));
-  }
-
-  @override
-  Future<List<StudentModel>> findClubMembers(String clubId) async {
-    return _queryAdapter.queryList(
-        'SELECT s.* FROM students s JOIN club_memberships m ON s.id = m.studentId WHERE m.clubId = ?1',
-        mapper: (Map<String, Object?> row) => StudentModel(id: row['id'] as String, upi: row['upi'] as String, fullName: row['full_name'] as String, gender: row['gender'] as String, dob: row['dob'] as String, grade: row['grade'] as String, classId: row['class_id'] as String, parentId: row['parent_id'] as String?, photoUrl: row['photo_url'] as String?, createdAt: row['created_at'] as int, synced: row['synced'] as int),
-        arguments: [clubId]);
   }
 
   @override
@@ -2768,17 +2845,6 @@ class _$EnterpriseDao extends EnterpriseDao {
   Future<void> logMemoRead(MemoReadRecord record) async {
     await _memoReadRecordInsertionAdapter.insert(
         record, OnConflictStrategy.abort);
-  }
-
-  @override
-  Future<void> insertClub(ClubModel club) async {
-    await _clubModelInsertionAdapter.insert(club, OnConflictStrategy.abort);
-  }
-
-  @override
-  Future<void> joinClub(ClubMembership membership) async {
-    await _clubMembershipInsertionAdapter.insert(
-        membership, OnConflictStrategy.abort);
   }
 
   @override
@@ -3310,6 +3376,477 @@ class _$MessagingDao extends MessagingDao {
   }
 }
 
+class _$ChatDao extends ChatDao {
+  _$ChatDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
+        _chatMessageInsertionAdapter = InsertionAdapter(
+            database,
+            'chat_messages',
+            (ChatMessage item) => <String, Object?>{
+                  'id': item.id,
+                  'sender_id': item.senderId,
+                  'receiver_id': item.receiverId,
+                  'group_id': item.groupId,
+                  'message': item.message,
+                  'file_path': item.filePath,
+                  'file_name': item.fileName,
+                  'file_type': item.fileType,
+                  'reply_to_id': item.replyToId,
+                  'status': item.status,
+                  'timestamp': item.timestamp,
+                  'is_deleted': item.isDeleted
+                }),
+        _chatGroupInsertionAdapter = InsertionAdapter(
+            database,
+            'chat_groups',
+            (ChatGroup item) => <String, Object?>{
+                  'id': item.id,
+                  'name': item.name,
+                  'type': item.type,
+                  'dept_id': item.deptId,
+                  'created_by': item.createdBy,
+                  'created_at': item.createdAt,
+                  'icon_code': item.iconCode
+                }),
+        _chatGroupMemberInsertionAdapter = InsertionAdapter(
+            database,
+            'chat_group_members',
+            (ChatGroupMember item) => <String, Object?>{
+                  'id': item.id,
+                  'group_id': item.groupId,
+                  'user_id': item.userId,
+                  'joined_at': item.joinedAt
+                }),
+        _chatReadReceiptInsertionAdapter = InsertionAdapter(
+            database,
+            'chat_read_receipts',
+            (ChatReadReceipt item) => <String, Object?>{
+                  'id': item.id,
+                  'message_id': item.messageId,
+                  'user_id': item.userId,
+                  'read_at': item.readAt
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<ChatMessage> _chatMessageInsertionAdapter;
+
+  final InsertionAdapter<ChatGroup> _chatGroupInsertionAdapter;
+
+  final InsertionAdapter<ChatGroupMember> _chatGroupMemberInsertionAdapter;
+
+  final InsertionAdapter<ChatReadReceipt> _chatReadReceiptInsertionAdapter;
+
+  @override
+  Future<List<ChatMessage>> findDirectMessages(
+    String userA,
+    String userB,
+    int limit,
+    int offset,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM chat_messages      WHERE is_deleted = 0        AND ((sender_id = ?1 AND receiver_id = ?2)          OR (sender_id = ?2 AND receiver_id = ?1))     ORDER BY timestamp ASC     LIMIT ?3 OFFSET ?4',
+        mapper: (Map<String, Object?> row) => ChatMessage(id: row['id'] as String, senderId: row['sender_id'] as String, receiverId: row['receiver_id'] as String?, groupId: row['group_id'] as String?, message: row['message'] as String, filePath: row['file_path'] as String?, fileName: row['file_name'] as String?, fileType: row['file_type'] as String?, replyToId: row['reply_to_id'] as String?, status: row['status'] as String, timestamp: row['timestamp'] as int, isDeleted: row['is_deleted'] as int),
+        arguments: [userA, userB, limit, offset]);
+  }
+
+  @override
+  Future<List<ChatMessage>> findGroupMessages(
+    String groupId,
+    int limit,
+    int offset,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM chat_messages      WHERE is_deleted = 0 AND group_id = ?1      ORDER BY timestamp ASC     LIMIT ?2 OFFSET ?3',
+        mapper: (Map<String, Object?> row) => ChatMessage(id: row['id'] as String, senderId: row['sender_id'] as String, receiverId: row['receiver_id'] as String?, groupId: row['group_id'] as String?, message: row['message'] as String, filePath: row['file_path'] as String?, fileName: row['file_name'] as String?, fileType: row['file_type'] as String?, replyToId: row['reply_to_id'] as String?, status: row['status'] as String, timestamp: row['timestamp'] as int, isDeleted: row['is_deleted'] as int),
+        arguments: [groupId, limit, offset]);
+  }
+
+  @override
+  Future<void> updateMessageStatus(
+    String id,
+    String status,
+  ) async {
+    await _queryAdapter.queryNoReturn(
+        'UPDATE chat_messages SET status = ?2 WHERE id = ?1',
+        arguments: [id, status]);
+  }
+
+  @override
+  Future<void> deleteMessage(String id) async {
+    await _queryAdapter.queryNoReturn(
+        'UPDATE chat_messages SET is_deleted = 1 WHERE id = ?1',
+        arguments: [id]);
+  }
+
+  @override
+  Future<int?> countUnreadDirect(String userId) async {
+    return _queryAdapter.query(
+        'SELECT COUNT(*) FROM chat_messages      WHERE receiver_id = ?1 AND status != \"read\" AND is_deleted = 0 AND group_id IS NULL',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
+        arguments: [userId]);
+  }
+
+  @override
+  Future<ChatMessage?> getLastDirectMessage(
+    String userA,
+    String userB,
+  ) async {
+    return _queryAdapter.query(
+        'SELECT * FROM chat_messages      WHERE is_deleted = 0        AND ((sender_id = ?1 AND receiver_id = ?2)          OR (sender_id = ?2 AND receiver_id = ?1))     ORDER BY timestamp DESC LIMIT 1',
+        mapper: (Map<String, Object?> row) => ChatMessage(id: row['id'] as String, senderId: row['sender_id'] as String, receiverId: row['receiver_id'] as String?, groupId: row['group_id'] as String?, message: row['message'] as String, filePath: row['file_path'] as String?, fileName: row['file_name'] as String?, fileType: row['file_type'] as String?, replyToId: row['reply_to_id'] as String?, status: row['status'] as String, timestamp: row['timestamp'] as int, isDeleted: row['is_deleted'] as int),
+        arguments: [userA, userB]);
+  }
+
+  @override
+  Future<ChatMessage?> getLastGroupMessage(String groupId) async {
+    return _queryAdapter.query(
+        'SELECT * FROM chat_messages      WHERE is_deleted = 0 AND group_id = ?1      ORDER BY timestamp DESC LIMIT 1',
+        mapper: (Map<String, Object?> row) => ChatMessage(id: row['id'] as String, senderId: row['sender_id'] as String, receiverId: row['receiver_id'] as String?, groupId: row['group_id'] as String?, message: row['message'] as String, filePath: row['file_path'] as String?, fileName: row['file_name'] as String?, fileType: row['file_type'] as String?, replyToId: row['reply_to_id'] as String?, status: row['status'] as String, timestamp: row['timestamp'] as int, isDeleted: row['is_deleted'] as int),
+        arguments: [groupId]);
+  }
+
+  @override
+  Future<List<ChatMessage>> getRecentDirectConversations(String userId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM chat_messages      WHERE is_deleted = 0        AND (sender_id = ?1 OR receiver_id = ?1)       AND group_id IS NULL     GROUP BY CASE        WHEN sender_id = ?1 THEN receiver_id        ELSE sender_id END     ORDER BY timestamp DESC',
+        mapper: (Map<String, Object?> row) => ChatMessage(id: row['id'] as String, senderId: row['sender_id'] as String, receiverId: row['receiver_id'] as String?, groupId: row['group_id'] as String?, message: row['message'] as String, filePath: row['file_path'] as String?, fileName: row['file_name'] as String?, fileType: row['file_type'] as String?, replyToId: row['reply_to_id'] as String?, status: row['status'] as String, timestamp: row['timestamp'] as int, isDeleted: row['is_deleted'] as int),
+        arguments: [userId]);
+  }
+
+  @override
+  Future<int?> countUnreadFromUser(
+    String userId,
+    String otherUserId,
+  ) async {
+    return _queryAdapter.query(
+        'SELECT COUNT(*) FROM chat_messages      WHERE is_deleted = 0 AND receiver_id = ?1 AND sender_id = ?2 AND status != \'read\'',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
+        arguments: [userId, otherUserId]);
+  }
+
+  @override
+  Future<List<ChatGroup>> getAllGroups() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM chat_groups ORDER BY name ASC',
+        mapper: (Map<String, Object?> row) => ChatGroup(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            type: row['type'] as String,
+            deptId: row['dept_id'] as String?,
+            createdBy: row['created_by'] as String,
+            createdAt: row['created_at'] as int,
+            iconCode: row['icon_code'] as int?));
+  }
+
+  @override
+  Future<ChatGroup?> getGroupById(String id) async {
+    return _queryAdapter.query('SELECT * FROM chat_groups WHERE id = ?1',
+        mapper: (Map<String, Object?> row) => ChatGroup(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            type: row['type'] as String,
+            deptId: row['dept_id'] as String?,
+            createdBy: row['created_by'] as String,
+            createdAt: row['created_at'] as int,
+            iconCode: row['icon_code'] as int?),
+        arguments: [id]);
+  }
+
+  @override
+  Future<List<ChatGroupMember>> getGroupMembers(String groupId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM chat_group_members WHERE group_id = ?1',
+        mapper: (Map<String, Object?> row) => ChatGroupMember(
+            id: row['id'] as int?,
+            groupId: row['group_id'] as String,
+            userId: row['user_id'] as String,
+            joinedAt: row['joined_at'] as int),
+        arguments: [groupId]);
+  }
+
+  @override
+  Future<List<ChatGroupMember>> getGroupsForUser(String userId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM chat_group_members WHERE user_id = ?1',
+        mapper: (Map<String, Object?> row) => ChatGroupMember(
+            id: row['id'] as int?,
+            groupId: row['group_id'] as String,
+            userId: row['user_id'] as String,
+            joinedAt: row['joined_at'] as int),
+        arguments: [userId]);
+  }
+
+  @override
+  Future<int?> isMemberOfGroup(
+    String groupId,
+    String userId,
+  ) async {
+    return _queryAdapter.query(
+        'SELECT COUNT(*) FROM chat_group_members WHERE group_id = ?1 AND user_id = ?2',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
+        arguments: [groupId, userId]);
+  }
+
+  @override
+  Future<int?> hasReadMessage(
+    String messageId,
+    String userId,
+  ) async {
+    return _queryAdapter.query(
+        'SELECT COUNT(*) FROM chat_read_receipts WHERE message_id = ?1 AND user_id = ?2',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
+        arguments: [messageId, userId]);
+  }
+
+  @override
+  Future<void> insertMessage(ChatMessage message) async {
+    await _chatMessageInsertionAdapter.insert(
+        message, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> insertGroup(ChatGroup group) async {
+    await _chatGroupInsertionAdapter.insert(group, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> insertGroupMember(ChatGroupMember member) async {
+    await _chatGroupMemberInsertionAdapter.insert(
+        member, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> insertReadReceipt(ChatReadReceipt receipt) async {
+    await _chatReadReceiptInsertionAdapter.insert(
+        receipt, OnConflictStrategy.abort);
+  }
+}
+
+class _$CalendarDao extends CalendarDao {
+  _$CalendarDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
+        _calendarEventInsertionAdapter = InsertionAdapter(
+            database,
+            'calendar_events',
+            (CalendarEvent item) => <String, Object?>{
+                  'id': item.id,
+                  'title': item.title,
+                  'event_type': item.eventType,
+                  'start_date': item.startDate,
+                  'end_date': item.endDate,
+                  'description': item.description,
+                  'priority': item.priority,
+                  'created_by': item.createdBy,
+                  'created_at': item.createdAt,
+                  'reminder_days': item.reminderDays
+                }),
+        _calendarEventUpdateAdapter = UpdateAdapter(
+            database,
+            'calendar_events',
+            ['id'],
+            (CalendarEvent item) => <String, Object?>{
+                  'id': item.id,
+                  'title': item.title,
+                  'event_type': item.eventType,
+                  'start_date': item.startDate,
+                  'end_date': item.endDate,
+                  'description': item.description,
+                  'priority': item.priority,
+                  'created_by': item.createdBy,
+                  'created_at': item.createdAt,
+                  'reminder_days': item.reminderDays
+                }),
+        _calendarEventDeletionAdapter = DeletionAdapter(
+            database,
+            'calendar_events',
+            ['id'],
+            (CalendarEvent item) => <String, Object?>{
+                  'id': item.id,
+                  'title': item.title,
+                  'event_type': item.eventType,
+                  'start_date': item.startDate,
+                  'end_date': item.endDate,
+                  'description': item.description,
+                  'priority': item.priority,
+                  'created_by': item.createdBy,
+                  'created_at': item.createdAt,
+                  'reminder_days': item.reminderDays
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<CalendarEvent> _calendarEventInsertionAdapter;
+
+  final UpdateAdapter<CalendarEvent> _calendarEventUpdateAdapter;
+
+  final DeletionAdapter<CalendarEvent> _calendarEventDeletionAdapter;
+
+  @override
+  Future<List<CalendarEvent>> getAllEvents() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM calendar_events ORDER BY start_date ASC',
+        mapper: (Map<String, Object?> row) => CalendarEvent(
+            id: row['id'] as String,
+            title: row['title'] as String,
+            eventType: row['event_type'] as String,
+            startDate: row['start_date'] as int,
+            endDate: row['end_date'] as int,
+            description: row['description'] as String?,
+            priority: row['priority'] as String,
+            createdBy: row['created_by'] as String,
+            createdAt: row['created_at'] as int,
+            reminderDays: row['reminder_days'] as int));
+  }
+
+  @override
+  Future<List<CalendarEvent>> getEventsInRange(
+    int fromMs,
+    int toMs,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM calendar_events      WHERE start_date >= ?1 AND start_date <= ?2      ORDER BY start_date ASC',
+        mapper: (Map<String, Object?> row) => CalendarEvent(id: row['id'] as String, title: row['title'] as String, eventType: row['event_type'] as String, startDate: row['start_date'] as int, endDate: row['end_date'] as int, description: row['description'] as String?, priority: row['priority'] as String, createdBy: row['created_by'] as String, createdAt: row['created_at'] as int, reminderDays: row['reminder_days'] as int),
+        arguments: [fromMs, toMs]);
+  }
+
+  @override
+  Future<List<CalendarEvent>> getUpcomingEvents(int nowMs) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM calendar_events      WHERE start_date >= ?1      ORDER BY start_date ASC',
+        mapper: (Map<String, Object?> row) => CalendarEvent(id: row['id'] as String, title: row['title'] as String, eventType: row['event_type'] as String, startDate: row['start_date'] as int, endDate: row['end_date'] as int, description: row['description'] as String?, priority: row['priority'] as String, createdBy: row['created_by'] as String, createdAt: row['created_at'] as int, reminderDays: row['reminder_days'] as int),
+        arguments: [nowMs]);
+  }
+
+  @override
+  Future<CalendarEvent?> getEventById(String id) async {
+    return _queryAdapter.query('SELECT * FROM calendar_events WHERE id = ?1',
+        mapper: (Map<String, Object?> row) => CalendarEvent(
+            id: row['id'] as String,
+            title: row['title'] as String,
+            eventType: row['event_type'] as String,
+            startDate: row['start_date'] as int,
+            endDate: row['end_date'] as int,
+            description: row['description'] as String?,
+            priority: row['priority'] as String,
+            createdBy: row['created_by'] as String,
+            createdAt: row['created_at'] as int,
+            reminderDays: row['reminder_days'] as int),
+        arguments: [id]);
+  }
+
+  @override
+  Future<List<CalendarEvent>> getEventsForMonth(
+    int fromMs,
+    int toMs,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM calendar_events      WHERE start_date BETWEEN ?1 AND ?2     ORDER BY start_date ASC',
+        mapper: (Map<String, Object?> row) => CalendarEvent(id: row['id'] as String, title: row['title'] as String, eventType: row['event_type'] as String, startDate: row['start_date'] as int, endDate: row['end_date'] as int, description: row['description'] as String?, priority: row['priority'] as String, createdBy: row['created_by'] as String, createdAt: row['created_at'] as int, reminderDays: row['reminder_days'] as int),
+        arguments: [fromMs, toMs]);
+  }
+
+  @override
+  Future<void> insertEvent(CalendarEvent event) async {
+    await _calendarEventInsertionAdapter.insert(
+        event, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> updateEvent(CalendarEvent event) async {
+    await _calendarEventUpdateAdapter.update(event, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> deleteEvent(CalendarEvent event) async {
+    await _calendarEventDeletionAdapter.delete(event);
+  }
+}
+
+class _$NotificationDao extends NotificationDao {
+  _$NotificationDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
+        _appNotificationInsertionAdapter = InsertionAdapter(
+            database,
+            'app_notifications',
+            (AppNotification item) => <String, Object?>{
+                  'id': item.id,
+                  'user_id': item.userId,
+                  'title': item.title,
+                  'message': item.message,
+                  'link': item.link,
+                  'notif_type': item.notifType,
+                  'reference_id': item.referenceId,
+                  'is_read': item.isRead,
+                  'created_at': item.createdAt
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<AppNotification> _appNotificationInsertionAdapter;
+
+  @override
+  Future<List<AppNotification>> getNotificationsForUser(String userId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM app_notifications WHERE user_id = ?1 ORDER BY created_at DESC LIMIT 50',
+        mapper: (Map<String, Object?> row) => AppNotification(id: row['id'] as int?, userId: row['user_id'] as String, title: row['title'] as String, message: row['message'] as String, link: row['link'] as String?, notifType: row['notif_type'] as String, referenceId: row['reference_id'] as String?, isRead: row['is_read'] as int, createdAt: row['created_at'] as int),
+        arguments: [userId]);
+  }
+
+  @override
+  Future<int?> countUnread(String userId) async {
+    return _queryAdapter.query(
+        'SELECT COUNT(*) FROM app_notifications WHERE user_id = ?1 AND is_read = 0',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
+        arguments: [userId]);
+  }
+
+  @override
+  Future<void> markRead(int id) async {
+    await _queryAdapter.queryNoReturn(
+        'UPDATE app_notifications SET is_read = 1 WHERE id = ?1',
+        arguments: [id]);
+  }
+
+  @override
+  Future<void> markAllRead(String userId) async {
+    await _queryAdapter.queryNoReturn(
+        'UPDATE app_notifications SET is_read = 1 WHERE user_id = ?1',
+        arguments: [userId]);
+  }
+
+  @override
+  Future<void> pruneOldNotifications(int olderThanMs) async {
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM app_notifications WHERE created_at < ?1',
+        arguments: [olderThanMs]);
+  }
+
+  @override
+  Future<void> insertNotification(AppNotification notification) async {
+    await _appNotificationInsertionAdapter.insert(
+        notification, OnConflictStrategy.abort);
+  }
+}
+
 class _$DepartmentDao extends DepartmentDao {
   _$DepartmentDao(
     this.database,
@@ -3426,7 +3963,7 @@ class _$DepartmentDao extends DepartmentDao {
   @override
   Future<List<DepartmentModel>> getAllActiveDepartments() async {
     return _queryAdapter.queryList(
-        'SELECT * FROM departments WHERE status = \"active\"',
+        'SELECT * FROM departments WHERE status = \'active\'',
         mapper: (Map<String, Object?> row) => DepartmentModel(
             id: row['id'] as String,
             name: row['name'] as String,
@@ -3547,7 +4084,7 @@ class _$DepartmentDao extends DepartmentDao {
   @override
   Future<void> clearHOD(String deptId) async {
     await _queryAdapter.queryNoReturn(
-        'DELETE FROM department_members WHERE department_id = ?1 AND role = \"hod\"',
+        'DELETE FROM department_members WHERE department_id = ?1 AND (role = \'hod\' OR role = \'HOD\')',
         arguments: [deptId]);
   }
 
@@ -3623,5 +4160,1823 @@ class _$DepartmentDao extends DepartmentDao {
   @override
   Future<void> removeMember(DepartmentMemberModel member) async {
     await _departmentMemberModelDeletionAdapter.delete(member);
+  }
+}
+
+class _$DeptActivityDao extends DeptActivityDao {
+  _$DeptActivityDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
+        _deptDocumentInsertionAdapter = InsertionAdapter(
+            database,
+            'dept_documents',
+            (DeptDocument item) => <String, Object?>{
+                  'id': item.id,
+                  'department_id': item.departmentId,
+                  'title': item.title,
+                  'category': item.category,
+                  'file_path': item.filePath,
+                  'file_name': item.fileName,
+                  'description': item.description,
+                  'uploaded_by': item.uploadedBy,
+                  'uploaded_at': item.uploadedAt,
+                  'status': item.status
+                }),
+        _deptMeetingInsertionAdapter = InsertionAdapter(
+            database,
+            'dept_meetings',
+            (DeptMeeting item) => <String, Object?>{
+                  'id': item.id,
+                  'department_id': item.departmentId,
+                  'title': item.title,
+                  'agenda': item.agenda,
+                  'scheduled_at': item.scheduledAt,
+                  'venue': item.venue,
+                  'minutes': item.minutes,
+                  'organized_by': item.organizedBy,
+                  'status': item.status
+                }),
+        _deptActivityInsertionAdapter = InsertionAdapter(
+            database,
+            'dept_activities',
+            (DeptActivity item) => <String, Object?>{
+                  'id': item.id,
+                  'department_id': item.departmentId,
+                  'module_type': item.moduleType,
+                  'title': item.title,
+                  'data': item.data,
+                  'recorded_by': item.recordedBy,
+                  'recorded_at': item.recordedAt,
+                  'status': item.status,
+                  'grade': item.grade,
+                  'subject': item.subject
+                }),
+        _deptComplianceInsertionAdapter = InsertionAdapter(
+            database,
+            'dept_compliance',
+            (DeptCompliance item) => <String, Object?>{
+                  'id': item.id,
+                  'department_id': item.departmentId,
+                  'item': item.item,
+                  'is_done': item.isDone,
+                  'due_date': item.dueDate,
+                  'completed_by': item.completedBy,
+                  'completed_at': item.completedAt,
+                  'term': item.term,
+                  'year': item.year
+                }),
+        _deptDocumentUpdateAdapter = UpdateAdapter(
+            database,
+            'dept_documents',
+            ['id'],
+            (DeptDocument item) => <String, Object?>{
+                  'id': item.id,
+                  'department_id': item.departmentId,
+                  'title': item.title,
+                  'category': item.category,
+                  'file_path': item.filePath,
+                  'file_name': item.fileName,
+                  'description': item.description,
+                  'uploaded_by': item.uploadedBy,
+                  'uploaded_at': item.uploadedAt,
+                  'status': item.status
+                }),
+        _deptMeetingUpdateAdapter = UpdateAdapter(
+            database,
+            'dept_meetings',
+            ['id'],
+            (DeptMeeting item) => <String, Object?>{
+                  'id': item.id,
+                  'department_id': item.departmentId,
+                  'title': item.title,
+                  'agenda': item.agenda,
+                  'scheduled_at': item.scheduledAt,
+                  'venue': item.venue,
+                  'minutes': item.minutes,
+                  'organized_by': item.organizedBy,
+                  'status': item.status
+                }),
+        _deptActivityUpdateAdapter = UpdateAdapter(
+            database,
+            'dept_activities',
+            ['id'],
+            (DeptActivity item) => <String, Object?>{
+                  'id': item.id,
+                  'department_id': item.departmentId,
+                  'module_type': item.moduleType,
+                  'title': item.title,
+                  'data': item.data,
+                  'recorded_by': item.recordedBy,
+                  'recorded_at': item.recordedAt,
+                  'status': item.status,
+                  'grade': item.grade,
+                  'subject': item.subject
+                }),
+        _deptComplianceUpdateAdapter = UpdateAdapter(
+            database,
+            'dept_compliance',
+            ['id'],
+            (DeptCompliance item) => <String, Object?>{
+                  'id': item.id,
+                  'department_id': item.departmentId,
+                  'item': item.item,
+                  'is_done': item.isDone,
+                  'due_date': item.dueDate,
+                  'completed_by': item.completedBy,
+                  'completed_at': item.completedAt,
+                  'term': item.term,
+                  'year': item.year
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<DeptDocument> _deptDocumentInsertionAdapter;
+
+  final InsertionAdapter<DeptMeeting> _deptMeetingInsertionAdapter;
+
+  final InsertionAdapter<DeptActivity> _deptActivityInsertionAdapter;
+
+  final InsertionAdapter<DeptCompliance> _deptComplianceInsertionAdapter;
+
+  final UpdateAdapter<DeptDocument> _deptDocumentUpdateAdapter;
+
+  final UpdateAdapter<DeptMeeting> _deptMeetingUpdateAdapter;
+
+  final UpdateAdapter<DeptActivity> _deptActivityUpdateAdapter;
+
+  final UpdateAdapter<DeptCompliance> _deptComplianceUpdateAdapter;
+
+  @override
+  Future<List<DeptDocument>> getDocsByDept(String deptId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM dept_documents WHERE department_id = ?1 ORDER BY uploaded_at DESC',
+        mapper: (Map<String, Object?> row) => DeptDocument(id: row['id'] as String, departmentId: row['department_id'] as String, title: row['title'] as String, category: row['category'] as String, filePath: row['file_path'] as String?, fileName: row['file_name'] as String, description: row['description'] as String?, uploadedBy: row['uploaded_by'] as String, uploadedAt: row['uploaded_at'] as int, status: row['status'] as String),
+        arguments: [deptId]);
+  }
+
+  @override
+  Future<List<DeptDocument>> getDocsByCategory(
+    String deptId,
+    String category,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM dept_documents WHERE department_id = ?1 AND category = ?2 ORDER BY uploaded_at DESC',
+        mapper: (Map<String, Object?> row) => DeptDocument(id: row['id'] as String, departmentId: row['department_id'] as String, title: row['title'] as String, category: row['category'] as String, filePath: row['file_path'] as String?, fileName: row['file_name'] as String, description: row['description'] as String?, uploadedBy: row['uploaded_by'] as String, uploadedAt: row['uploaded_at'] as int, status: row['status'] as String),
+        arguments: [deptId, category]);
+  }
+
+  @override
+  Future<void> deleteDocument(String id) async {
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM dept_documents WHERE id = ?1',
+        arguments: [id]);
+  }
+
+  @override
+  Future<List<DeptMeeting>> getMeetingsByDept(String deptId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM dept_meetings WHERE department_id = ?1 ORDER BY scheduled_at DESC',
+        mapper: (Map<String, Object?> row) => DeptMeeting(id: row['id'] as String, departmentId: row['department_id'] as String, title: row['title'] as String, agenda: row['agenda'] as String, scheduledAt: row['scheduled_at'] as int, venue: row['venue'] as String, minutes: row['minutes'] as String?, organizedBy: row['organized_by'] as String, status: row['status'] as String),
+        arguments: [deptId]);
+  }
+
+  @override
+  Future<List<DeptMeeting>> getMeetingsByStatus(
+    String deptId,
+    String status,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM dept_meetings WHERE department_id = ?1 AND status = ?2 ORDER BY scheduled_at DESC',
+        mapper: (Map<String, Object?> row) => DeptMeeting(id: row['id'] as String, departmentId: row['department_id'] as String, title: row['title'] as String, agenda: row['agenda'] as String, scheduledAt: row['scheduled_at'] as int, venue: row['venue'] as String, minutes: row['minutes'] as String?, organizedBy: row['organized_by'] as String, status: row['status'] as String),
+        arguments: [deptId, status]);
+  }
+
+  @override
+  Future<List<DeptActivity>> getActivitiesByDept(String deptId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM dept_activities WHERE department_id = ?1 ORDER BY recorded_at DESC',
+        mapper: (Map<String, Object?> row) => DeptActivity(id: row['id'] as int?, departmentId: row['department_id'] as String, moduleType: row['module_type'] as String, title: row['title'] as String, data: row['data'] as String?, recordedBy: row['recorded_by'] as String, recordedAt: row['recorded_at'] as int, status: row['status'] as String, grade: row['grade'] as String?, subject: row['subject'] as String?),
+        arguments: [deptId]);
+  }
+
+  @override
+  Future<List<DeptActivity>> getActivitiesByModule(
+    String deptId,
+    String moduleType,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM dept_activities WHERE department_id = ?1 AND module_type = ?2 ORDER BY recorded_at DESC',
+        mapper: (Map<String, Object?> row) => DeptActivity(id: row['id'] as int?, departmentId: row['department_id'] as String, moduleType: row['module_type'] as String, title: row['title'] as String, data: row['data'] as String?, recordedBy: row['recorded_by'] as String, recordedAt: row['recorded_at'] as int, status: row['status'] as String, grade: row['grade'] as String?, subject: row['subject'] as String?),
+        arguments: [deptId, moduleType]);
+  }
+
+  @override
+  Future<List<DeptActivity>> getActivitiesByStatus(
+    String deptId,
+    String status,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM dept_activities WHERE department_id = ?1 AND status = ?2 ORDER BY recorded_at DESC',
+        mapper: (Map<String, Object?> row) => DeptActivity(id: row['id'] as int?, departmentId: row['department_id'] as String, moduleType: row['module_type'] as String, title: row['title'] as String, data: row['data'] as String?, recordedBy: row['recorded_by'] as String, recordedAt: row['recorded_at'] as int, status: row['status'] as String, grade: row['grade'] as String?, subject: row['subject'] as String?),
+        arguments: [deptId, status]);
+  }
+
+  @override
+  Future<List<DeptCompliance>> getComplianceItems(
+    String deptId,
+    String term,
+    String year,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM dept_compliance WHERE department_id = ?1 AND term = ?2 AND year = ?3',
+        mapper: (Map<String, Object?> row) => DeptCompliance(id: row['id'] as int?, departmentId: row['department_id'] as String, item: row['item'] as String, isDone: row['is_done'] as int, dueDate: row['due_date'] as int?, completedBy: row['completed_by'] as String?, completedAt: row['completed_at'] as int?, term: row['term'] as String, year: row['year'] as String),
+        arguments: [deptId, term, year]);
+  }
+
+  @override
+  Future<List<DeptCompliance>> getAllComplianceItems(String deptId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM dept_compliance WHERE department_id = ?1',
+        mapper: (Map<String, Object?> row) => DeptCompliance(
+            id: row['id'] as int?,
+            departmentId: row['department_id'] as String,
+            item: row['item'] as String,
+            isDone: row['is_done'] as int,
+            dueDate: row['due_date'] as int?,
+            completedBy: row['completed_by'] as String?,
+            completedAt: row['completed_at'] as int?,
+            term: row['term'] as String,
+            year: row['year'] as String),
+        arguments: [deptId]);
+  }
+
+  @override
+  Future<void> deleteCompliance(int id) async {
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM dept_compliance WHERE id = ?1',
+        arguments: [id]);
+  }
+
+  @override
+  Future<void> insertDocument(DeptDocument doc) async {
+    await _deptDocumentInsertionAdapter.insert(doc, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> insertMeeting(DeptMeeting meeting) async {
+    await _deptMeetingInsertionAdapter.insert(
+        meeting, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> insertActivity(DeptActivity activity) async {
+    await _deptActivityInsertionAdapter.insert(
+        activity, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> insertCompliance(DeptCompliance item) async {
+    await _deptComplianceInsertionAdapter.insert(
+        item, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> updateDocument(DeptDocument doc) async {
+    await _deptDocumentUpdateAdapter.update(doc, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> updateMeeting(DeptMeeting meeting) async {
+    await _deptMeetingUpdateAdapter.update(meeting, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> updateActivity(DeptActivity activity) async {
+    await _deptActivityUpdateAdapter.update(activity, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> updateCompliance(DeptCompliance item) async {
+    await _deptComplianceUpdateAdapter.update(item, OnConflictStrategy.abort);
+  }
+}
+
+class _$ClubDao extends ClubDao {
+  _$ClubDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
+        _clubModelInsertionAdapter = InsertionAdapter(
+            database,
+            'clubs',
+            (ClubModel item) => <String, Object?>{
+                  'id': item.id,
+                  'name': item.name,
+                  'category': item.category,
+                  'description': item.description,
+                  'patron_id': item.patronId,
+                  'assistant_patron_id': item.assistantPatronId,
+                  'meeting_day': item.meetingDay,
+                  'meeting_time': item.meetingTime,
+                  'status': item.status,
+                  'capacity_limit': item.capacityLimit,
+                  'created_at': item.createdAt
+                }),
+        _clubMemberModelInsertionAdapter = InsertionAdapter(
+            database,
+            'club_members',
+            (ClubMemberModel item) => <String, Object?>{
+                  'id': item.id,
+                  'club_id': item.clubId,
+                  'student_id': item.studentId,
+                  'role': item.role,
+                  'joined_at': item.joinedAt,
+                  'joined_by': item.joinedBy,
+                  'consent_form_signed': item.consentFormSigned ? 1 : 0,
+                  'parent_contact_verified': item.parentContactVerified ? 1 : 0
+                }),
+        _clubActivityModelInsertionAdapter = InsertionAdapter(
+            database,
+            'club_activities',
+            (ClubActivityModel item) => <String, Object?>{
+                  'id': item.id,
+                  'club_id': item.clubId,
+                  'title': item.title,
+                  'description': item.description,
+                  'type': item.type,
+                  'scheduled_at': item.scheduledAt,
+                  'venue': item.venue,
+                  'status': item.status,
+                  'recorded_at': item.recordedAt
+                }),
+        _clubAttendanceModelInsertionAdapter = InsertionAdapter(
+            database,
+            'club_attendance',
+            (ClubAttendanceModel item) => <String, Object?>{
+                  'id': item.id,
+                  'activity_id': item.activityId,
+                  'student_id': item.studentId,
+                  'status': item.status,
+                  'remarks': item.remarks
+                }),
+        _clubReportModelInsertionAdapter = InsertionAdapter(
+            database,
+            'club_reports',
+            (ClubReportModel item) => <String, Object?>{
+                  'id': item.id,
+                  'club_id': item.clubId,
+                  'term': item.term,
+                  'year': item.year,
+                  'content': item.content,
+                  'submitted_at': item.submittedAt,
+                  'patron_id': item.patronId,
+                  'status': item.status
+                }),
+        _clubModelUpdateAdapter = UpdateAdapter(
+            database,
+            'clubs',
+            ['id'],
+            (ClubModel item) => <String, Object?>{
+                  'id': item.id,
+                  'name': item.name,
+                  'category': item.category,
+                  'description': item.description,
+                  'patron_id': item.patronId,
+                  'assistant_patron_id': item.assistantPatronId,
+                  'meeting_day': item.meetingDay,
+                  'meeting_time': item.meetingTime,
+                  'status': item.status,
+                  'capacity_limit': item.capacityLimit,
+                  'created_at': item.createdAt
+                }),
+        _clubActivityModelUpdateAdapter = UpdateAdapter(
+            database,
+            'club_activities',
+            ['id'],
+            (ClubActivityModel item) => <String, Object?>{
+                  'id': item.id,
+                  'club_id': item.clubId,
+                  'title': item.title,
+                  'description': item.description,
+                  'type': item.type,
+                  'scheduled_at': item.scheduledAt,
+                  'venue': item.venue,
+                  'status': item.status,
+                  'recorded_at': item.recordedAt
+                }),
+        _clubMemberModelDeletionAdapter = DeletionAdapter(
+            database,
+            'club_members',
+            ['id'],
+            (ClubMemberModel item) => <String, Object?>{
+                  'id': item.id,
+                  'club_id': item.clubId,
+                  'student_id': item.studentId,
+                  'role': item.role,
+                  'joined_at': item.joinedAt,
+                  'joined_by': item.joinedBy,
+                  'consent_form_signed': item.consentFormSigned ? 1 : 0,
+                  'parent_contact_verified': item.parentContactVerified ? 1 : 0
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<ClubModel> _clubModelInsertionAdapter;
+
+  final InsertionAdapter<ClubMemberModel> _clubMemberModelInsertionAdapter;
+
+  final InsertionAdapter<ClubActivityModel> _clubActivityModelInsertionAdapter;
+
+  final InsertionAdapter<ClubAttendanceModel>
+      _clubAttendanceModelInsertionAdapter;
+
+  final InsertionAdapter<ClubReportModel> _clubReportModelInsertionAdapter;
+
+  final UpdateAdapter<ClubModel> _clubModelUpdateAdapter;
+
+  final UpdateAdapter<ClubActivityModel> _clubActivityModelUpdateAdapter;
+
+  final DeletionAdapter<ClubMemberModel> _clubMemberModelDeletionAdapter;
+
+  @override
+  Future<List<ClubModel>> getAllActiveClubs() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM clubs WHERE status = \"active\"',
+        mapper: (Map<String, Object?> row) => ClubModel(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            category: row['category'] as String,
+            description: row['description'] as String,
+            patronId: row['patron_id'] as String?,
+            assistantPatronId: row['assistant_patron_id'] as String?,
+            meetingDay: row['meeting_day'] as String?,
+            meetingTime: row['meeting_time'] as String?,
+            status: row['status'] as String,
+            capacityLimit: row['capacity_limit'] as int,
+            createdAt: row['created_at'] as int));
+  }
+
+  @override
+  Future<ClubModel?> getClubById(String id) async {
+    return _queryAdapter.query('SELECT * FROM clubs WHERE id = ?1',
+        mapper: (Map<String, Object?> row) => ClubModel(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            category: row['category'] as String,
+            description: row['description'] as String,
+            patronId: row['patron_id'] as String?,
+            assistantPatronId: row['assistant_patron_id'] as String?,
+            meetingDay: row['meeting_day'] as String?,
+            meetingTime: row['meeting_time'] as String?,
+            status: row['status'] as String,
+            capacityLimit: row['capacity_limit'] as int,
+            createdAt: row['created_at'] as int),
+        arguments: [id]);
+  }
+
+  @override
+  Future<List<ClubModel>> getClubsByPatron(String patronId) async {
+    return _queryAdapter.queryList('SELECT * FROM clubs WHERE patron_id = ?1',
+        mapper: (Map<String, Object?> row) => ClubModel(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            category: row['category'] as String,
+            description: row['description'] as String,
+            patronId: row['patron_id'] as String?,
+            assistantPatronId: row['assistant_patron_id'] as String?,
+            meetingDay: row['meeting_day'] as String?,
+            meetingTime: row['meeting_time'] as String?,
+            status: row['status'] as String,
+            capacityLimit: row['capacity_limit'] as int,
+            createdAt: row['created_at'] as int),
+        arguments: [patronId]);
+  }
+
+  @override
+  Future<List<ClubMemberModel>> getMembersByClub(String clubId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM club_members WHERE club_id = ?1',
+        mapper: (Map<String, Object?> row) => ClubMemberModel(
+            id: row['id'] as int?,
+            clubId: row['club_id'] as String,
+            studentId: row['student_id'] as String,
+            role: row['role'] as String,
+            joinedAt: row['joined_at'] as int,
+            joinedBy: row['joined_by'] as String,
+            consentFormSigned: (row['consent_form_signed'] as int) != 0,
+            parentContactVerified:
+                (row['parent_contact_verified'] as int) != 0),
+        arguments: [clubId]);
+  }
+
+  @override
+  Future<int?> getStudentClubCount(String studentId) async {
+    return _queryAdapter.query(
+        'SELECT COUNT(*) FROM club_members WHERE student_id = ?1',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
+        arguments: [studentId]);
+  }
+
+  @override
+  Future<ClubMemberModel?> getMembership(
+    String studentId,
+    String clubId,
+  ) async {
+    return _queryAdapter.query(
+        'SELECT * FROM club_members WHERE student_id = ?1 AND club_id = ?2',
+        mapper: (Map<String, Object?> row) => ClubMemberModel(
+            id: row['id'] as int?,
+            clubId: row['club_id'] as String,
+            studentId: row['student_id'] as String,
+            role: row['role'] as String,
+            joinedAt: row['joined_at'] as int,
+            joinedBy: row['joined_by'] as String,
+            consentFormSigned: (row['consent_form_signed'] as int) != 0,
+            parentContactVerified:
+                (row['parent_contact_verified'] as int) != 0),
+        arguments: [studentId, clubId]);
+  }
+
+  @override
+  Future<void> removeStudentFromClub(
+    String studentId,
+    String clubId,
+  ) async {
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM club_members WHERE student_id = ?1 AND club_id = ?2',
+        arguments: [studentId, clubId]);
+  }
+
+  @override
+  Future<List<ClubActivityModel>> getActivitiesByClub(String clubId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM club_activities WHERE club_id = ?1 ORDER BY scheduled_at DESC',
+        mapper: (Map<String, Object?> row) => ClubActivityModel(id: row['id'] as String, clubId: row['club_id'] as String, title: row['title'] as String, description: row['description'] as String, type: row['type'] as String, scheduledAt: row['scheduled_at'] as int, venue: row['venue'] as String, status: row['status'] as String, recordedAt: row['recorded_at'] as int),
+        arguments: [clubId]);
+  }
+
+  @override
+  Future<ClubActivityModel?> getActivityById(String id) async {
+    return _queryAdapter.query('SELECT * FROM club_activities WHERE id = ?1',
+        mapper: (Map<String, Object?> row) => ClubActivityModel(
+            id: row['id'] as String,
+            clubId: row['club_id'] as String,
+            title: row['title'] as String,
+            description: row['description'] as String,
+            type: row['type'] as String,
+            scheduledAt: row['scheduled_at'] as int,
+            venue: row['venue'] as String,
+            status: row['status'] as String,
+            recordedAt: row['recorded_at'] as int),
+        arguments: [id]);
+  }
+
+  @override
+  Future<List<ClubAttendanceModel>> getAttendanceByActivity(
+      String activityId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM club_attendance WHERE activity_id = ?1',
+        mapper: (Map<String, Object?> row) => ClubAttendanceModel(
+            id: row['id'] as int?,
+            activityId: row['activity_id'] as String,
+            studentId: row['student_id'] as String,
+            status: row['status'] as String,
+            remarks: row['remarks'] as String?),
+        arguments: [activityId]);
+  }
+
+  @override
+  Future<List<ClubReportModel>> getReportsByClub(String clubId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM club_reports WHERE club_id = ?1 ORDER BY submitted_at DESC',
+        mapper: (Map<String, Object?> row) => ClubReportModel(id: row['id'] as String, clubId: row['club_id'] as String, term: row['term'] as int, year: row['year'] as String, content: row['content'] as String, submittedAt: row['submitted_at'] as int, patronId: row['patron_id'] as String, status: row['status'] as String),
+        arguments: [clubId]);
+  }
+
+  @override
+  Future<List<ClubModel>> getAllClubs() async {
+    return _queryAdapter.queryList('SELECT * FROM clubs',
+        mapper: (Map<String, Object?> row) => ClubModel(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            category: row['category'] as String,
+            description: row['description'] as String,
+            patronId: row['patron_id'] as String?,
+            assistantPatronId: row['assistant_patron_id'] as String?,
+            meetingDay: row['meeting_day'] as String?,
+            meetingTime: row['meeting_time'] as String?,
+            status: row['status'] as String,
+            capacityLimit: row['capacity_limit'] as int,
+            createdAt: row['created_at'] as int));
+  }
+
+  @override
+  Future<List<StudentModel>> getEligibleStudentsForClub(String clubId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM students      WHERE CAST(SUBSTR(grade, 7) AS INTEGER) BETWEEN 4 AND 9      AND id NOT IN (SELECT student_id FROM club_members WHERE club_id = ?1)',
+        mapper: (Map<String, Object?> row) => StudentModel(id: row['id'] as String, upi: row['upi'] as String, fullName: row['full_name'] as String, gender: row['gender'] as String, dob: row['dob'] as String, grade: row['grade'] as String, classId: row['class_id'] as String, parentId: row['parent_id'] as String?, photoUrl: row['photo_url'] as String?, createdAt: row['created_at'] as int, synced: row['synced'] as int),
+        arguments: [clubId]);
+  }
+
+  @override
+  Future<void> insertClub(ClubModel club) async {
+    await _clubModelInsertionAdapter.insert(club, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> insertMember(ClubMemberModel member) async {
+    await _clubMemberModelInsertionAdapter.insert(
+        member, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertActivity(ClubActivityModel activity) async {
+    await _clubActivityModelInsertionAdapter.insert(
+        activity, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> insertAttendance(ClubAttendanceModel attendance) async {
+    await _clubAttendanceModelInsertionAdapter.insert(
+        attendance, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertReport(ClubReportModel report) async {
+    await _clubReportModelInsertionAdapter.insert(
+        report, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> updateClub(ClubModel club) async {
+    await _clubModelUpdateAdapter.update(club, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> updateActivity(ClubActivityModel activity) async {
+    await _clubActivityModelUpdateAdapter.update(
+        activity, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> removeMember(ClubMemberModel member) async {
+    await _clubMemberModelDeletionAdapter.delete(member);
+  }
+}
+
+class _$TodDao extends TodDao {
+  _$TodDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
+        _dutyRosterModelInsertionAdapter = InsertionAdapter(
+            database,
+            'duty_roster',
+            (DutyRosterModel item) => <String, Object?>{
+                  'id': item.id,
+                  'teacher_id': item.teacherId,
+                  'week_number': item.weekNumber,
+                  'start_date': item.startDate,
+                  'end_date': item.endDate
+                }),
+        _todRecordModelInsertionAdapter = InsertionAdapter(
+            database,
+            'tod_records',
+            (TodRecordModel item) => <String, Object?>{
+                  'id': item.id,
+                  'student_id': item.studentId,
+                  'offence': item.offence,
+                  'punishment': item.punishment,
+                  'remarks': item.remarks,
+                  'teacher_id': item.teacherId,
+                  'date': item.date,
+                  'status': item.status
+                }),
+        _studentBehaviorModelInsertionAdapter = InsertionAdapter(
+            database,
+            'student_behavior',
+            (StudentBehaviorModel item) => <String, Object?>{
+                  'student_id': item.studentId,
+                  'weekly_offences': item.weeklyOffences,
+                  'status': item.status
+                }),
+        _todRecordModelUpdateAdapter = UpdateAdapter(
+            database,
+            'tod_records',
+            ['id'],
+            (TodRecordModel item) => <String, Object?>{
+                  'id': item.id,
+                  'student_id': item.studentId,
+                  'offence': item.offence,
+                  'punishment': item.punishment,
+                  'remarks': item.remarks,
+                  'teacher_id': item.teacherId,
+                  'date': item.date,
+                  'status': item.status
+                }),
+        _studentBehaviorModelUpdateAdapter = UpdateAdapter(
+            database,
+            'student_behavior',
+            ['student_id'],
+            (StudentBehaviorModel item) => <String, Object?>{
+                  'student_id': item.studentId,
+                  'weekly_offences': item.weeklyOffences,
+                  'status': item.status
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<DutyRosterModel> _dutyRosterModelInsertionAdapter;
+
+  final InsertionAdapter<TodRecordModel> _todRecordModelInsertionAdapter;
+
+  final InsertionAdapter<StudentBehaviorModel>
+      _studentBehaviorModelInsertionAdapter;
+
+  final UpdateAdapter<TodRecordModel> _todRecordModelUpdateAdapter;
+
+  final UpdateAdapter<StudentBehaviorModel> _studentBehaviorModelUpdateAdapter;
+
+  @override
+  Future<List<DutyRosterModel>> getAllDutyRosters() async {
+    return _queryAdapter.queryList('SELECT * FROM duty_roster',
+        mapper: (Map<String, Object?> row) => DutyRosterModel(
+            id: row['id'] as String,
+            teacherId: row['teacher_id'] as String,
+            weekNumber: row['week_number'] as int,
+            startDate: row['start_date'] as int,
+            endDate: row['end_date'] as int));
+  }
+
+  @override
+  Future<List<DutyRosterModel>> getDutyRostersByWeek(int weekNumber) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM duty_roster WHERE week_number = ?1',
+        mapper: (Map<String, Object?> row) => DutyRosterModel(
+            id: row['id'] as String,
+            teacherId: row['teacher_id'] as String,
+            weekNumber: row['week_number'] as int,
+            startDate: row['start_date'] as int,
+            endDate: row['end_date'] as int),
+        arguments: [weekNumber]);
+  }
+
+  @override
+  Future<List<DutyRosterModel>> getDutyRostersByTeacher(
+      String teacherId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM duty_roster WHERE teacher_id = ?1',
+        mapper: (Map<String, Object?> row) => DutyRosterModel(
+            id: row['id'] as String,
+            teacherId: row['teacher_id'] as String,
+            weekNumber: row['week_number'] as int,
+            startDate: row['start_date'] as int,
+            endDate: row['end_date'] as int),
+        arguments: [teacherId]);
+  }
+
+  @override
+  Future<List<DutyRosterModel>> getDutyRosterForDate(int date) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM duty_roster WHERE ?1 BETWEEN start_date AND end_date',
+        mapper: (Map<String, Object?> row) => DutyRosterModel(
+            id: row['id'] as String,
+            teacherId: row['teacher_id'] as String,
+            weekNumber: row['week_number'] as int,
+            startDate: row['start_date'] as int,
+            endDate: row['end_date'] as int),
+        arguments: [date]);
+  }
+
+  @override
+  Future<void> clearDutyRosters() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM duty_roster');
+  }
+
+  @override
+  Future<void> clearDutyRostersByWeek(int weekNumber) async {
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM duty_roster WHERE week_number = ?1',
+        arguments: [weekNumber]);
+  }
+
+  @override
+  Future<List<TodRecordModel>> getAllTodRecords() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM tod_records ORDER BY date DESC',
+        mapper: (Map<String, Object?> row) => TodRecordModel(
+            id: row['id'] as String,
+            studentId: row['student_id'] as String,
+            offence: row['offence'] as String,
+            punishment: row['punishment'] as String,
+            remarks: row['remarks'] as String?,
+            teacherId: row['teacher_id'] as String,
+            date: row['date'] as int,
+            status: row['status'] as String));
+  }
+
+  @override
+  Future<List<TodRecordModel>> getTodRecordsByTeacher(String teacherId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM tod_records WHERE teacher_id = ?1 ORDER BY date DESC',
+        mapper: (Map<String, Object?> row) => TodRecordModel(
+            id: row['id'] as String,
+            studentId: row['student_id'] as String,
+            offence: row['offence'] as String,
+            punishment: row['punishment'] as String,
+            remarks: row['remarks'] as String?,
+            teacherId: row['teacher_id'] as String,
+            date: row['date'] as int,
+            status: row['status'] as String),
+        arguments: [teacherId]);
+  }
+
+  @override
+  Future<List<TodRecordModel>> getTodRecordsByStudent(String studentId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM tod_records WHERE student_id = ?1 ORDER BY date DESC',
+        mapper: (Map<String, Object?> row) => TodRecordModel(
+            id: row['id'] as String,
+            studentId: row['student_id'] as String,
+            offence: row['offence'] as String,
+            punishment: row['punishment'] as String,
+            remarks: row['remarks'] as String?,
+            teacherId: row['teacher_id'] as String,
+            date: row['date'] as int,
+            status: row['status'] as String),
+        arguments: [studentId]);
+  }
+
+  @override
+  Future<List<TodRecordModel>> getTodRecordsByDateRange(
+    int startOfDay,
+    int endOfDay,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM tod_records WHERE date >= ?1 AND date <= ?2',
+        mapper: (Map<String, Object?> row) => TodRecordModel(
+            id: row['id'] as String,
+            studentId: row['student_id'] as String,
+            offence: row['offence'] as String,
+            punishment: row['punishment'] as String,
+            remarks: row['remarks'] as String?,
+            teacherId: row['teacher_id'] as String,
+            date: row['date'] as int,
+            status: row['status'] as String),
+        arguments: [startOfDay, endOfDay]);
+  }
+
+  @override
+  Future<List<StudentBehaviorModel>> getAllStudentBehaviors() async {
+    return _queryAdapter.queryList('SELECT * FROM student_behavior',
+        mapper: (Map<String, Object?> row) => StudentBehaviorModel(
+            studentId: row['student_id'] as String,
+            weeklyOffences: row['weekly_offences'] as int,
+            status: row['status'] as String));
+  }
+
+  @override
+  Future<StudentBehaviorModel?> getStudentBehavior(String studentId) async {
+    return _queryAdapter.query(
+        'SELECT * FROM student_behavior WHERE student_id = ?1',
+        mapper: (Map<String, Object?> row) => StudentBehaviorModel(
+            studentId: row['student_id'] as String,
+            weeklyOffences: row['weekly_offences'] as int,
+            status: row['status'] as String),
+        arguments: [studentId]);
+  }
+
+  @override
+  Future<List<StudentBehaviorModel>> getStudentBehaviorsByStatus(
+      String status) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM student_behavior WHERE status = ?1',
+        mapper: (Map<String, Object?> row) => StudentBehaviorModel(
+            studentId: row['student_id'] as String,
+            weeklyOffences: row['weekly_offences'] as int,
+            status: row['status'] as String),
+        arguments: [status]);
+  }
+
+  @override
+  Future<void> clearStudentBehaviors() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM student_behavior');
+  }
+
+  @override
+  Future<void> insertDutyRoster(DutyRosterModel roster) async {
+    await _dutyRosterModelInsertionAdapter.insert(
+        roster, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertDutyRosters(List<DutyRosterModel> rosters) async {
+    await _dutyRosterModelInsertionAdapter.insertList(
+        rosters, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> insertTodRecord(TodRecordModel record) async {
+    await _todRecordModelInsertionAdapter.insert(
+        record, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertStudentBehavior(StudentBehaviorModel behavior) async {
+    await _studentBehaviorModelInsertionAdapter.insert(
+        behavior, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> updateTodRecord(TodRecordModel record) async {
+    await _todRecordModelUpdateAdapter.update(
+        record, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> updateStudentBehavior(StudentBehaviorModel behavior) async {
+    await _studentBehaviorModelUpdateAdapter.update(
+        behavior, OnConflictStrategy.replace);
+  }
+}
+
+class _$FinanceErpDao extends FinanceErpDao {
+  _$FinanceErpDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
+        _financeStaffInsertionAdapter = InsertionAdapter(
+            database,
+            'staff',
+            (FinanceStaff item) => <String, Object?>{
+                  'staff_id': item.staff_id,
+                  'name': item.name,
+                  'role': item.role,
+                  'department': item.department,
+                  'employment_type': item.employment_type,
+                  'bank_name': item.bank_name,
+                  'account_no': item.account_no,
+                  'bank_branch': item.bank_branch,
+                  'date_hired': item.date_hired
+                }),
+        _erpFeeStructureInsertionAdapter = InsertionAdapter(
+            database,
+            'fee_structure',
+            (ErpFeeStructure item) => <String, Object?>{
+                  'fee_id': item.fee_id,
+                  'fee_name': item.fee_name,
+                  'amount': item.amount,
+                  'term': item.term,
+                  'is_optional': item.is_optional ? 1 : 0
+                }),
+        _studentBillingInsertionAdapter = InsertionAdapter(
+            database,
+            'student_billing',
+            (StudentBilling item) => <String, Object?>{
+                  'billing_id': item.billing_id,
+                  'student_id': item.student_id,
+                  'term': item.term,
+                  'tuition': item.tuition,
+                  'transport': item.transport,
+                  'meals': item.meals,
+                  'swimming': item.swimming,
+                  'other_charges': item.other_charges,
+                  'total_amount': item.total_amount,
+                  'balance': item.balance,
+                  'status': item.status
+                }),
+        _erpFeePaymentInsertionAdapter = InsertionAdapter(
+            database,
+            'fee_payments',
+            (ErpFeePayment item) => <String, Object?>{
+                  'payment_id': item.payment_id,
+                  'student_id': item.student_id,
+                  'amount_paid': item.amount_paid,
+                  'payment_method': item.payment_method,
+                  'transaction_code': item.transaction_code,
+                  'date_paid': item.date_paid,
+                  'received_by': item.received_by
+                }),
+        _erpAmenityInsertionAdapter = InsertionAdapter(
+            database,
+            'amenities',
+            (ErpAmenity item) => <String, Object?>{
+                  'amenity_id': item.amenity_id,
+                  'amenity_name': item.amenity_name,
+                  'fee_amount': item.fee_amount,
+                  'billing_type': item.billing_type
+                }),
+        _studentAmenityInsertionAdapter = InsertionAdapter(
+            database,
+            'student_amenities',
+            (StudentAmenity item) => <String, Object?>{
+                  'id': item.id,
+                  'student_id': item.student_id,
+                  'amenity_id': item.amenity_id,
+                  'term': item.term,
+                  'status': item.status
+                }),
+        _payrollInsertionAdapter = InsertionAdapter(
+            database,
+            'payroll',
+            (Payroll item) => <String, Object?>{
+                  'payroll_id': item.payroll_id,
+                  'staff_id': item.staff_id,
+                  'month': item.month,
+                  'basic_salary': item.basic_salary,
+                  'allowances': item.allowances,
+                  'deductions': item.deductions,
+                  'nssf': item.nssf,
+                  'shif': item.shif,
+                  'housing_levy': item.housing_levy,
+                  'paye': item.paye,
+                  'loan_deduction': item.loan_deduction,
+                  'net_salary': item.net_salary,
+                  'status': item.status,
+                  'processed_by': item.processed_by,
+                  'date_processed': item.date_processed
+                }),
+        _staffLoanInsertionAdapter = InsertionAdapter(
+            database,
+            'staff_loans',
+            (StaffLoan item) => <String, Object?>{
+                  'loan_id': item.loan_id,
+                  'staff_id': item.staff_id,
+                  'loan_amount': item.loan_amount,
+                  'interest_rate': item.interest_rate,
+                  'repayment_period': item.repayment_period,
+                  'monthly_deduction': item.monthly_deduction,
+                  'total_repayment': item.total_repayment,
+                  'remaining_balance': item.remaining_balance,
+                  'status': item.status,
+                  'approved_by': item.approved_by,
+                  'issue_date': item.issue_date,
+                  'created_at': item.created_at
+                }),
+        _loanRepaymentInsertionAdapter = InsertionAdapter(
+            database,
+            'loan_repayments',
+            (LoanRepayment item) => <String, Object?>{
+                  'repayment_id': item.repayment_id,
+                  'loan_id': item.loan_id,
+                  'payroll_id': item.payroll_id,
+                  'amount': item.amount,
+                  'payment_date': item.payment_date,
+                  'deducted_from_payroll': item.deducted_from_payroll ? 1 : 0
+                }),
+        _erpExpenseInsertionAdapter = InsertionAdapter(
+            database,
+            'expenses',
+            (ErpExpense item) => <String, Object?>{
+                  'expense_id': item.expense_id,
+                  'category': item.category,
+                  'description': item.description,
+                  'amount': item.amount,
+                  'payment_method': item.payment_method,
+                  'date': item.date,
+                  'approved_by': item.approved_by
+                }),
+        _erpAssetInsertionAdapter = InsertionAdapter(
+            database,
+            'assets',
+            (ErpAsset item) => <String, Object?>{
+                  'asset_id': item.asset_id,
+                  'asset_name': item.asset_name,
+                  'category': item.category,
+                  'purchase_date': item.purchase_date,
+                  'purchase_value': item.purchase_value,
+                  'condition': item.condition,
+                  'status': item.status
+                }),
+        _erpRepairInsertionAdapter = InsertionAdapter(
+            database,
+            'repairs',
+            (ErpRepair item) => <String, Object?>{
+                  'repair_id': item.repair_id,
+                  'asset_id': item.asset_id,
+                  'description': item.description,
+                  'repair_cost': item.repair_cost,
+                  'repair_date': item.repair_date,
+                  'technician': item.technician
+                }),
+        _resourceRequestInsertionAdapter = InsertionAdapter(
+            database,
+            'resource_requests',
+            (ResourceRequest item) => <String, Object?>{
+                  'request_id': item.request_id,
+                  'teacher_id': item.teacher_id,
+                  'purpose': item.purpose,
+                  'status': item.status,
+                  'total_budget': item.total_budget,
+                  'created_at': item.created_at
+                }),
+        _resourceRequestItemInsertionAdapter = InsertionAdapter(
+            database,
+            'resource_request_items',
+            (ResourceRequestItem item) => <String, Object?>{
+                  'id': item.id,
+                  'request_id': item.request_id,
+                  'item_name': item.item_name,
+                  'quantity': item.quantity,
+                  'price': item.price,
+                  'total': item.total
+                }),
+        _budgetApprovalInsertionAdapter = InsertionAdapter(
+            database,
+            'budget_approvals',
+            (BudgetApproval item) => <String, Object?>{
+                  'id': item.id,
+                  'request_id': item.request_id,
+                  'approved_by': item.approved_by,
+                  'decision': item.decision,
+                  'comments': item.comments,
+                  'date': item.date
+                }),
+        _salaryComponentInsertionAdapter = InsertionAdapter(
+            database,
+            'salary_components',
+            (SalaryComponent item) => <String, Object?>{
+                  'component_id': item.component_id,
+                  'name': item.name,
+                  'type': item.type,
+                  'description': item.description,
+                  'is_statutory': item.is_statutory ? 1 : 0,
+                  'is_tax_applicable': item.is_tax_applicable ? 1 : 0,
+                  'is_attendance_linked': item.is_attendance_linked ? 1 : 0,
+                  'default_amount': item.default_amount
+                }),
+        _salaryStructureInsertionAdapter = InsertionAdapter(
+            database,
+            'salary_structures',
+            (SalaryStructure item) => <String, Object?>{
+                  'structure_id': item.structure_id,
+                  'name': item.name,
+                  'company': item.company,
+                  'is_active': item.is_active ? 1 : 0,
+                  'total_earnings': item.total_earnings,
+                  'total_deductions': item.total_deductions
+                }),
+        _salaryStructureAssignmentInsertionAdapter = InsertionAdapter(
+            database,
+            'salary_structure_assignments',
+            (SalaryStructureAssignment item) => <String, Object?>{
+                  'assignment_id': item.assignment_id,
+                  'staff_id': item.staff_id,
+                  'structure_id': item.structure_id,
+                  'from_date': item.from_date,
+                  'base_salary': item.base_salary
+                }),
+        _payrollEntryInsertionAdapter = InsertionAdapter(
+            database,
+            'payroll_entries',
+            (PayrollEntry item) => <String, Object?>{
+                  'payroll_entry_id': item.payroll_entry_id,
+                  'month': item.month,
+                  'structure_id': item.structure_id,
+                  'status': item.status,
+                  'posting_date': item.posting_date,
+                  'count_processed': item.count_processed
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<FinanceStaff> _financeStaffInsertionAdapter;
+
+  final InsertionAdapter<ErpFeeStructure> _erpFeeStructureInsertionAdapter;
+
+  final InsertionAdapter<StudentBilling> _studentBillingInsertionAdapter;
+
+  final InsertionAdapter<ErpFeePayment> _erpFeePaymentInsertionAdapter;
+
+  final InsertionAdapter<ErpAmenity> _erpAmenityInsertionAdapter;
+
+  final InsertionAdapter<StudentAmenity> _studentAmenityInsertionAdapter;
+
+  final InsertionAdapter<Payroll> _payrollInsertionAdapter;
+
+  final InsertionAdapter<StaffLoan> _staffLoanInsertionAdapter;
+
+  final InsertionAdapter<LoanRepayment> _loanRepaymentInsertionAdapter;
+
+  final InsertionAdapter<ErpExpense> _erpExpenseInsertionAdapter;
+
+  final InsertionAdapter<ErpAsset> _erpAssetInsertionAdapter;
+
+  final InsertionAdapter<ErpRepair> _erpRepairInsertionAdapter;
+
+  final InsertionAdapter<ResourceRequest> _resourceRequestInsertionAdapter;
+
+  final InsertionAdapter<ResourceRequestItem>
+      _resourceRequestItemInsertionAdapter;
+
+  final InsertionAdapter<BudgetApproval> _budgetApprovalInsertionAdapter;
+
+  final InsertionAdapter<SalaryComponent> _salaryComponentInsertionAdapter;
+
+  final InsertionAdapter<SalaryStructure> _salaryStructureInsertionAdapter;
+
+  final InsertionAdapter<SalaryStructureAssignment>
+      _salaryStructureAssignmentInsertionAdapter;
+
+  final InsertionAdapter<PayrollEntry> _payrollEntryInsertionAdapter;
+
+  @override
+  Future<List<FinanceStaff>> getAllStaff() async {
+    return _queryAdapter.queryList('SELECT * FROM staff',
+        mapper: (Map<String, Object?> row) => FinanceStaff(
+            staff_id: row['staff_id'] as String,
+            name: row['name'] as String,
+            role: row['role'] as String,
+            department: row['department'] as String,
+            employment_type: row['employment_type'] as String,
+            bank_name: row['bank_name'] as String,
+            account_no: row['account_no'] as String,
+            bank_branch: row['bank_branch'] as String,
+            date_hired: row['date_hired'] as int));
+  }
+
+  @override
+  Future<void> clearStaff() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM staff');
+  }
+
+  @override
+  Future<List<ErpFeeStructure>> getAllFeeStructures() async {
+    return _queryAdapter.queryList('SELECT * FROM fee_structure',
+        mapper: (Map<String, Object?> row) => ErpFeeStructure(
+            fee_id: row['fee_id'] as String,
+            fee_name: row['fee_name'] as String,
+            amount: row['amount'] as double,
+            term: row['term'] as int,
+            is_optional: (row['is_optional'] as int) != 0));
+  }
+
+  @override
+  Future<void> clearFeeStructure() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM fee_structure');
+  }
+
+  @override
+  Future<List<StudentBilling>> getAllBillings() async {
+    return _queryAdapter.queryList('SELECT * FROM student_billing',
+        mapper: (Map<String, Object?> row) => StudentBilling(
+            billing_id: row['billing_id'] as String,
+            student_id: row['student_id'] as String,
+            term: row['term'] as int,
+            tuition: row['tuition'] as double,
+            transport: row['transport'] as double,
+            meals: row['meals'] as double,
+            swimming: row['swimming'] as double,
+            other_charges: row['other_charges'] as double,
+            total_amount: row['total_amount'] as double,
+            balance: row['balance'] as double,
+            status: row['status'] as String));
+  }
+
+  @override
+  Future<StudentBilling?> getBillingByStudent(String studentId) async {
+    return _queryAdapter.query(
+        'SELECT * FROM student_billing WHERE student_id = ?1 LIMIT 1',
+        mapper: (Map<String, Object?> row) => StudentBilling(
+            billing_id: row['billing_id'] as String,
+            student_id: row['student_id'] as String,
+            term: row['term'] as int,
+            tuition: row['tuition'] as double,
+            transport: row['transport'] as double,
+            meals: row['meals'] as double,
+            swimming: row['swimming'] as double,
+            other_charges: row['other_charges'] as double,
+            total_amount: row['total_amount'] as double,
+            balance: row['balance'] as double,
+            status: row['status'] as String),
+        arguments: [studentId]);
+  }
+
+  @override
+  Future<void> clearBillings() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM student_billing');
+  }
+
+  @override
+  Future<List<ErpFeePayment>> getAllPayments() async {
+    return _queryAdapter.queryList('SELECT * FROM fee_payments',
+        mapper: (Map<String, Object?> row) => ErpFeePayment(
+            payment_id: row['payment_id'] as String,
+            student_id: row['student_id'] as String,
+            amount_paid: row['amount_paid'] as double,
+            payment_method: row['payment_method'] as String,
+            transaction_code: row['transaction_code'] as String,
+            date_paid: row['date_paid'] as int,
+            received_by: row['received_by'] as String));
+  }
+
+  @override
+  Future<List<ErpFeePayment>> getPaymentsByStudent(String studentId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM fee_payments WHERE student_id = ?1',
+        mapper: (Map<String, Object?> row) => ErpFeePayment(
+            payment_id: row['payment_id'] as String,
+            student_id: row['student_id'] as String,
+            amount_paid: row['amount_paid'] as double,
+            payment_method: row['payment_method'] as String,
+            transaction_code: row['transaction_code'] as String,
+            date_paid: row['date_paid'] as int,
+            received_by: row['received_by'] as String),
+        arguments: [studentId]);
+  }
+
+  @override
+  Future<void> clearPayments() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM fee_payments');
+  }
+
+  @override
+  Future<List<ErpAmenity>> getAllAmenities() async {
+    return _queryAdapter.queryList('SELECT * FROM amenities',
+        mapper: (Map<String, Object?> row) => ErpAmenity(
+            amenity_id: row['amenity_id'] as String,
+            amenity_name: row['amenity_name'] as String,
+            fee_amount: row['fee_amount'] as double,
+            billing_type: row['billing_type'] as String));
+  }
+
+  @override
+  Future<void> clearAmenities() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM amenities');
+  }
+
+  @override
+  Future<List<StudentAmenity>> getAllStudentAmenities() async {
+    return _queryAdapter.queryList('SELECT * FROM student_amenities',
+        mapper: (Map<String, Object?> row) => StudentAmenity(
+            id: row['id'] as String,
+            student_id: row['student_id'] as String,
+            amenity_id: row['amenity_id'] as String,
+            term: row['term'] as int,
+            status: row['status'] as String));
+  }
+
+  @override
+  Future<void> clearStudentAmenities() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM student_amenities');
+  }
+
+  @override
+  Future<List<Payroll>> getAllPayrolls() async {
+    return _queryAdapter.queryList('SELECT * FROM payroll',
+        mapper: (Map<String, Object?> row) => Payroll(
+            payroll_id: row['payroll_id'] as String,
+            staff_id: row['staff_id'] as String,
+            month: row['month'] as String,
+            basic_salary: row['basic_salary'] as double,
+            allowances: row['allowances'] as double,
+            deductions: row['deductions'] as double,
+            nssf: row['nssf'] as double,
+            shif: row['shif'] as double,
+            housing_levy: row['housing_levy'] as double,
+            paye: row['paye'] as double,
+            loan_deduction: row['loan_deduction'] as double,
+            net_salary: row['net_salary'] as double,
+            status: row['status'] as String,
+            processed_by: row['processed_by'] as String,
+            date_processed: row['date_processed'] as int));
+  }
+
+  @override
+  Future<List<Payroll>> getPayrollByStaff(String staffId) async {
+    return _queryAdapter.queryList('SELECT * FROM payroll WHERE staff_id = ?1',
+        mapper: (Map<String, Object?> row) => Payroll(
+            payroll_id: row['payroll_id'] as String,
+            staff_id: row['staff_id'] as String,
+            month: row['month'] as String,
+            basic_salary: row['basic_salary'] as double,
+            allowances: row['allowances'] as double,
+            deductions: row['deductions'] as double,
+            nssf: row['nssf'] as double,
+            shif: row['shif'] as double,
+            housing_levy: row['housing_levy'] as double,
+            paye: row['paye'] as double,
+            loan_deduction: row['loan_deduction'] as double,
+            net_salary: row['net_salary'] as double,
+            status: row['status'] as String,
+            processed_by: row['processed_by'] as String,
+            date_processed: row['date_processed'] as int),
+        arguments: [staffId]);
+  }
+
+  @override
+  Future<void> clearPayroll() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM payroll');
+  }
+
+  @override
+  Future<List<StaffLoan>> getAllLoans() async {
+    return _queryAdapter.queryList('SELECT * FROM staff_loans',
+        mapper: (Map<String, Object?> row) => StaffLoan(
+            loan_id: row['loan_id'] as String,
+            staff_id: row['staff_id'] as String,
+            loan_amount: row['loan_amount'] as double,
+            interest_rate: row['interest_rate'] as double,
+            repayment_period: row['repayment_period'] as int,
+            monthly_deduction: row['monthly_deduction'] as double,
+            total_repayment: row['total_repayment'] as double,
+            remaining_balance: row['remaining_balance'] as double,
+            status: row['status'] as String,
+            approved_by: row['approved_by'] as String?,
+            issue_date: row['issue_date'] as int,
+            created_at: row['created_at'] as int));
+  }
+
+  @override
+  Future<List<StaffLoan>> getActiveLoansByStaff(String staffId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM staff_loans WHERE staff_id = ?1 AND status = \"Approved\"',
+        mapper: (Map<String, Object?> row) => StaffLoan(loan_id: row['loan_id'] as String, staff_id: row['staff_id'] as String, loan_amount: row['loan_amount'] as double, interest_rate: row['interest_rate'] as double, repayment_period: row['repayment_period'] as int, monthly_deduction: row['monthly_deduction'] as double, total_repayment: row['total_repayment'] as double, remaining_balance: row['remaining_balance'] as double, status: row['status'] as String, approved_by: row['approved_by'] as String?, issue_date: row['issue_date'] as int, created_at: row['created_at'] as int),
+        arguments: [staffId]);
+  }
+
+  @override
+  Future<void> clearLoans() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM staff_loans');
+  }
+
+  @override
+  Future<List<LoanRepayment>> getAllLoanRepayments() async {
+    return _queryAdapter.queryList('SELECT * FROM loan_repayments',
+        mapper: (Map<String, Object?> row) => LoanRepayment(
+            repayment_id: row['repayment_id'] as String,
+            loan_id: row['loan_id'] as String,
+            payroll_id: row['payroll_id'] as String?,
+            amount: row['amount'] as double,
+            payment_date: row['payment_date'] as int,
+            deducted_from_payroll: (row['deducted_from_payroll'] as int) != 0));
+  }
+
+  @override
+  Future<void> clearLoanRepayments() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM loan_repayments');
+  }
+
+  @override
+  Future<List<ErpExpense>> getAllExpenses() async {
+    return _queryAdapter.queryList('SELECT * FROM expenses',
+        mapper: (Map<String, Object?> row) => ErpExpense(
+            expense_id: row['expense_id'] as String,
+            category: row['category'] as String,
+            description: row['description'] as String,
+            amount: row['amount'] as double,
+            payment_method: row['payment_method'] as String,
+            date: row['date'] as int,
+            approved_by: row['approved_by'] as String));
+  }
+
+  @override
+  Future<void> clearExpenses() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM expenses');
+  }
+
+  @override
+  Future<List<ErpAsset>> getAllAssets() async {
+    return _queryAdapter.queryList('SELECT * FROM assets',
+        mapper: (Map<String, Object?> row) => ErpAsset(
+            asset_id: row['asset_id'] as String,
+            asset_name: row['asset_name'] as String,
+            category: row['category'] as String,
+            purchase_date: row['purchase_date'] as int,
+            purchase_value: row['purchase_value'] as double,
+            condition: row['condition'] as String,
+            status: row['status'] as String));
+  }
+
+  @override
+  Future<void> clearAssets() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM assets');
+  }
+
+  @override
+  Future<List<ErpRepair>> getAllRepairs() async {
+    return _queryAdapter.queryList('SELECT * FROM repairs',
+        mapper: (Map<String, Object?> row) => ErpRepair(
+            repair_id: row['repair_id'] as String,
+            asset_id: row['asset_id'] as String,
+            description: row['description'] as String,
+            repair_cost: row['repair_cost'] as double,
+            repair_date: row['repair_date'] as int,
+            technician: row['technician'] as String));
+  }
+
+  @override
+  Future<void> clearRepairs() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM repairs');
+  }
+
+  @override
+  Future<List<ResourceRequest>> getAllResourceRequests() async {
+    return _queryAdapter.queryList('SELECT * FROM resource_requests',
+        mapper: (Map<String, Object?> row) => ResourceRequest(
+            request_id: row['request_id'] as String,
+            teacher_id: row['teacher_id'] as String,
+            purpose: row['purpose'] as String,
+            status: row['status'] as String,
+            total_budget: row['total_budget'] as double,
+            created_at: row['created_at'] as int));
+  }
+
+  @override
+  Future<List<ResourceRequest>> getResourceRequestsByTeacher(
+      String teacherId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM resource_requests WHERE teacher_id = ?1',
+        mapper: (Map<String, Object?> row) => ResourceRequest(
+            request_id: row['request_id'] as String,
+            teacher_id: row['teacher_id'] as String,
+            purpose: row['purpose'] as String,
+            status: row['status'] as String,
+            total_budget: row['total_budget'] as double,
+            created_at: row['created_at'] as int),
+        arguments: [teacherId]);
+  }
+
+  @override
+  Future<List<ResourceRequest>> getResourceRequestsByStatus(
+      String status) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM resource_requests WHERE status = ?1',
+        mapper: (Map<String, Object?> row) => ResourceRequest(
+            request_id: row['request_id'] as String,
+            teacher_id: row['teacher_id'] as String,
+            purpose: row['purpose'] as String,
+            status: row['status'] as String,
+            total_budget: row['total_budget'] as double,
+            created_at: row['created_at'] as int),
+        arguments: [status]);
+  }
+
+  @override
+  Future<void> deleteResourceRequest(String requestId) async {
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM resource_requests WHERE request_id = ?1',
+        arguments: [requestId]);
+  }
+
+  @override
+  Future<void> clearResourceRequests() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM resource_requests');
+  }
+
+  @override
+  Future<void> clearRequestItems() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM resource_request_items');
+  }
+
+  @override
+  Future<List<ResourceRequestItem>> getRequestItems(String requestId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM resource_request_items WHERE request_id = ?1',
+        mapper: (Map<String, Object?> row) => ResourceRequestItem(
+            id: row['id'] as int?,
+            request_id: row['request_id'] as String,
+            item_name: row['item_name'] as String,
+            quantity: row['quantity'] as int,
+            price: row['price'] as double,
+            total: row['total'] as double),
+        arguments: [requestId]);
+  }
+
+  @override
+  Future<void> deleteRequestItems(String requestId) async {
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM resource_request_items WHERE request_id = ?1',
+        arguments: [requestId]);
+  }
+
+  @override
+  Future<List<BudgetApproval>> getApprovalsByRequest(String requestId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM budget_approvals WHERE request_id = ?1',
+        mapper: (Map<String, Object?> row) => BudgetApproval(
+            id: row['id'] as int?,
+            request_id: row['request_id'] as String,
+            approved_by: row['approved_by'] as String,
+            decision: row['decision'] as String,
+            comments: row['comments'] as String,
+            date: row['date'] as int),
+        arguments: [requestId]);
+  }
+
+  @override
+  Future<void> clearBudgetApprovals() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM budget_approvals');
+  }
+
+  @override
+  Future<void> clearSalaryComponents() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM salary_components');
+  }
+
+  @override
+  Future<void> clearSalaryStructures() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM salary_structures');
+  }
+
+  @override
+  Future<void> clearSalaryStructureAssignments() async {
+    await _queryAdapter
+        .queryNoReturn('DELETE FROM salary_structure_assignments');
+  }
+
+  @override
+  Future<void> clearPayrollEntries() async {
+    await _queryAdapter.queryNoReturn('DELETE FROM payroll_entries');
+  }
+
+  @override
+  Future<List<SalaryComponent>> getAllSalaryComponents() async {
+    return _queryAdapter.queryList('SELECT * FROM salary_components',
+        mapper: (Map<String, Object?> row) => SalaryComponent(
+            component_id: row['component_id'] as String,
+            name: row['name'] as String,
+            type: row['type'] as String,
+            description: row['description'] as String?,
+            is_statutory: (row['is_statutory'] as int) != 0,
+            is_tax_applicable: (row['is_tax_applicable'] as int) != 0,
+            is_attendance_linked: (row['is_attendance_linked'] as int) != 0,
+            default_amount: row['default_amount'] as double));
+  }
+
+  @override
+  Future<List<SalaryStructure>> getAllSalaryStructures() async {
+    return _queryAdapter.queryList('SELECT * FROM salary_structures',
+        mapper: (Map<String, Object?> row) => SalaryStructure(
+            structure_id: row['structure_id'] as String,
+            name: row['name'] as String,
+            company: row['company'] as String,
+            is_active: (row['is_active'] as int) != 0,
+            total_earnings: row['total_earnings'] as double,
+            total_deductions: row['total_deductions'] as double));
+  }
+
+  @override
+  Future<List<SalaryStructureAssignment>> getAllStructureAssignments() async {
+    return _queryAdapter.queryList('SELECT * FROM salary_structure_assignments',
+        mapper: (Map<String, Object?> row) => SalaryStructureAssignment(
+            assignment_id: row['assignment_id'] as String,
+            staff_id: row['staff_id'] as String,
+            structure_id: row['structure_id'] as String,
+            from_date: row['from_date'] as int,
+            base_salary: row['base_salary'] as double));
+  }
+
+  @override
+  Future<SalaryStructureAssignment?> getAssignmentByStaff(
+      String staffId) async {
+    return _queryAdapter.query(
+        'SELECT * FROM salary_structure_assignments WHERE staff_id = ?1',
+        mapper: (Map<String, Object?> row) => SalaryStructureAssignment(
+            assignment_id: row['assignment_id'] as String,
+            staff_id: row['staff_id'] as String,
+            structure_id: row['structure_id'] as String,
+            from_date: row['from_date'] as int,
+            base_salary: row['base_salary'] as double),
+        arguments: [staffId]);
+  }
+
+  @override
+  Future<List<PayrollEntry>> getAllPayrollEntries() async {
+    return _queryAdapter.queryList('SELECT * FROM payroll_entries',
+        mapper: (Map<String, Object?> row) => PayrollEntry(
+            payroll_entry_id: row['payroll_entry_id'] as String,
+            month: row['month'] as String,
+            structure_id: row['structure_id'] as String,
+            status: row['status'] as String,
+            posting_date: row['posting_date'] as int,
+            count_processed: row['count_processed'] as int));
+  }
+
+  @override
+  Future<void> insertStaff(FinanceStaff staff) async {
+    await _financeStaffInsertionAdapter.insert(
+        staff, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertFeeStructure(ErpFeeStructure fee) async {
+    await _erpFeeStructureInsertionAdapter.insert(
+        fee, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertBilling(StudentBilling billing) async {
+    await _studentBillingInsertionAdapter.insert(
+        billing, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertPayment(ErpFeePayment payment) async {
+    await _erpFeePaymentInsertionAdapter.insert(
+        payment, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertAmenity(ErpAmenity amenity) async {
+    await _erpAmenityInsertionAdapter.insert(
+        amenity, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertStudentAmenity(StudentAmenity sa) async {
+    await _studentAmenityInsertionAdapter.insert(
+        sa, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertPayroll(Payroll payroll) async {
+    await _payrollInsertionAdapter.insert(payroll, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertLoan(StaffLoan loan) async {
+    await _staffLoanInsertionAdapter.insert(loan, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertLoanRepayment(LoanRepayment lr) async {
+    await _loanRepaymentInsertionAdapter.insert(lr, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertExpense(ErpExpense expense) async {
+    await _erpExpenseInsertionAdapter.insert(
+        expense, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertAsset(ErpAsset asset) async {
+    await _erpAssetInsertionAdapter.insert(asset, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertRepair(ErpRepair repair) async {
+    await _erpRepairInsertionAdapter.insert(repair, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertResourceRequest(ResourceRequest request) async {
+    await _resourceRequestInsertionAdapter.insert(
+        request, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertRequestItem(ResourceRequestItem item) async {
+    await _resourceRequestItemInsertionAdapter.insert(
+        item, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertBudgetApproval(BudgetApproval approval) async {
+    await _budgetApprovalInsertionAdapter.insert(
+        approval, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertSalaryComponent(SalaryComponent component) async {
+    await _salaryComponentInsertionAdapter.insert(
+        component, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertSalaryStructure(SalaryStructure structure) async {
+    await _salaryStructureInsertionAdapter.insert(
+        structure, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertStructureAssignment(
+      SalaryStructureAssignment assignment) async {
+    await _salaryStructureAssignmentInsertionAdapter.insert(
+        assignment, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertPayrollEntry(PayrollEntry entry) async {
+    await _payrollEntryInsertionAdapter.insert(
+        entry, OnConflictStrategy.replace);
   }
 }

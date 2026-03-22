@@ -12,7 +12,7 @@ abstract class DepartmentDao {
   @update
   Future<void> updateDepartment(DepartmentModel department);
 
-  @Query('SELECT * FROM departments WHERE status = "active"')
+  @Query("SELECT * FROM departments WHERE status = 'active'")
   Future<List<DepartmentModel>> getAllActiveDepartments();
 
   @Query('SELECT * FROM departments WHERE id = :id')
@@ -58,7 +58,7 @@ abstract class DepartmentDao {
   @Query('SELECT * FROM approval_logs WHERE entity_id = :entityId ORDER BY timestamp DESC')
   Future<List<ApprovalLogModel>> getLogsForEntity(String entityId);
 
-  @Query('DELETE FROM department_members WHERE department_id = :deptId AND role = "hod"')
+  @Query("DELETE FROM department_members WHERE department_id = :deptId AND (role = 'hod' OR role = 'HOD')")
   Future<void> clearHOD(String deptId);
 
   @Query('SELECT * FROM departments')

@@ -10,6 +10,7 @@ import '../../../core/router/app_router.dart';
 import '../../auth/auth_provider.dart';
 import '../../../data/models/user_model.dart';
 import 'dart:async';
+import '../../tod/tod_provider.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   final String title;
@@ -74,7 +75,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     // ── EMERGENCY BROADCAST CHECK ──
     _checkEmergency(context);
 
-    final navItems = _buildNavItems(user);
+    final isOnDuty = ref.watch(isOnDutyProvider).value ?? false;
+    final navItems = _buildNavItems(user, isOnDuty);
 
     return Listener(
       behavior: HitTestBehavior.translucent,
@@ -269,7 +271,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     return best;
   }
 
-  List<_NavItem> _buildNavItems(UserModel? user) {
+  List<_NavItem> _buildNavItems(UserModel? user, bool isOnDuty) {
     if (user == null) return [];
 
     final level = user.roleLevel;
@@ -287,20 +289,50 @@ class _AppShellState extends ConsumerState<AppShell> {
     if (level == AppConstants.roleTeacher || level == AppConstants.roleSeniorTeacher) {
       items.add(_NavItem(Icons.auto_stories_outlined, 'My Teaching', Routes.teacherTimetable));
       items.add(_NavItem(Icons.edit_calendar_outlined, 'CBC Assessments', Routes.assessment));
-      items.add(_NavItem(Icons.corporate_fare_outlined, 'Departments', Routes.departments));
+      items.add(_NavItem(Icons.corporate_fare_outlined, 'My Department', Routes.departments));
       items.add(_NavItem(Icons.how_to_reg_outlined, 'Roll Call', Routes.attendance));
     }
     
     // Coordination
     if (level <= AppConstants.roleDeputy) {
+      items.add(_NavItem(Icons.business_outlined, 'All Departments', Routes.departments));
+      items.add(_NavItem(Icons.compare_arrows_outlined, 'Dept Comparison', Routes.deptComparison));
       items.add(_NavItem(Icons.grid_on_outlined, 'Timetable Engine', Routes.timetable));
       items.add(_NavItem(Icons.engineering_outlined, 'Teacher Capacity', Routes.timetableCapacity));
       items.add(_NavItem(Icons.assignment_outlined, 'Class Demands', Routes.timetableDemand));
     }
+
+    // Teacher on Duty - Deputy Controls
+    if (level <= AppConstants.roleDeputy) {
+      items.add(_NavItem(null, 'TEACHER ON DUTY', '', isHeader: true));
+      items.add(    _NavItem(Icons.event_repeat_outlined, 'Duty Roster', Routes.todRoster));
+      items.add(_NavItem(Icons.analytics_outlined, 'Weekly Reports', Routes.todReports));
+      items.add(_NavItem(Icons.warning_amber_outlined, 'Amber Watchlist', Routes.todAmber));
+      items.add(_NavItem(Icons.report_problem_outlined, 'Red Escalation', Routes.todRed));
+    }
+
+    // Teacher on Duty - Active Teacher Menu
+    if (isOnDuty) {
+      items.add(_NavItem(null, 'DUTY PANEL', '', isHeader: true));
+      items.add(_NavItem(Icons.assignment_ind_outlined, 'TOD Records', Routes.todRecords));
+      items.add(_NavItem(Icons.summarize_outlined, 'Submit Daily Report', Routes.todReports));
+    }
     
     // Finance
     if (level <= AppConstants.roleHeadteacher || level == AppConstants.roleAccountant || level == AppConstants.roleParent) {
-      items.add(_NavItem(Icons.account_balance_outlined, 'Finance Hub', level == AppConstants.roleParent ? Routes.statement : Routes.finance));
+      items.add(_NavItem(null, 'FINANCE', '', isHeader: true));
+      items.add(_NavItem(Icons.account_balance_outlined, 'Dashboard', level == AppConstants.roleParent ? Routes.statement : Routes.finance));
+      if (level != AppConstants.roleParent) {
+        items.add(_NavItem(Icons.receipt_long_outlined, 'Student Billing', Routes.financeBilling));
+        items.add(_NavItem(Icons.account_tree_outlined, 'Fee Structure', Routes.financeStructure));
+        items.add(_NavItem(Icons.payments_outlined, 'Payments & Receipts', Routes.financePayments));
+        items.add(_NavItem(Icons.request_quote_outlined, 'Payroll', Routes.financePayroll));
+        items.add(_NavItem(Icons.credit_score_outlined, 'Staff Loans', Routes.financeLoans));
+        items.add(_NavItem(Icons.trending_down_outlined, 'Expenses', Routes.financeExpenses));
+        items.add(_NavItem(Icons.handyman_outlined, 'Asset & Repairs', Routes.financeAssets));
+        items.add(_NavItem(Icons.room_preferences_outlined, 'Amenities Billing', Routes.financeAmenities));
+        items.add(_NavItem(Icons.bar_chart_outlined, 'Financial Reports', Routes.financeReports));
+      }
     }
 
     // Special Modules
@@ -312,7 +344,7 @@ class _AppShellState extends ConsumerState<AppShell> {
 
     // ── 🟢 CONNECTIVE ENGINES ────────────────────────────────────────────────
     items.add(_NavItem(null, 'CONNECTIVE', '', isHeader: true));
-    items.add(_NavItem(Icons.forum_outlined, 'Messaging', Routes.messaging));
+    items.add(_NavItem(Icons.forum_outlined, 'Messaging Hub', Routes.messaging));
     
     if (level <= AppConstants.roleHeadteacher) {
       items.add(_NavItem(Icons.insights_outlined, 'Executive Analytics', Routes.analytics));

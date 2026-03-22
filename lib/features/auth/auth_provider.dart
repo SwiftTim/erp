@@ -12,6 +12,7 @@ import '../../data/models/medical_model.dart';
 import '../../core/constants/app_constants.dart';
 import '../../data/models/curriculum_models.dart';
 import '../../data/models/finance_model.dart';
+import '../../core/data/finance_erp_seed.dart';
 import 'package:uuid/uuid.dart';
 
 // ── Database Provider ─────────────────────────────────────────────────────────
@@ -25,7 +26,7 @@ final databaseProvider = FutureProvider<AppDatabase>((ref) async {
   final userCount = await db.userDao.countAll();
   if (userCount == 0) {
     const uuid = Uuid();
-    final bytes = utf8.encode('admin123' + 'cbc_salt_2026');
+    final bytes = utf8.encode('admin123' 'cbc_salt_2026');
     final hash = sha256.convert(bytes).toString();
 
     // ── ROLE-BASED TEST ACCOUNTS ──────────────────────────────────────────────
@@ -135,6 +136,9 @@ final databaseProvider = FutureProvider<AppDatabase>((ref) async {
       academicYear: '2026',
       dateRecorded: DateTime.now().millisecondsSinceEpoch,
     ));
+
+    // ── SEED ERP FINANCE ──
+    await seedFinanceErp(db);
   }
 
   // 3. Ensure Classes are seeded for Timetable Engine

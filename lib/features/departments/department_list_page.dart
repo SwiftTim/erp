@@ -20,7 +20,7 @@ class DepartmentListPage extends ConsumerWidget {
     return AppShell(
       title: 'School Departments',
       body: FutureBuilder<List<DepartmentModel>>(
-        future: user != null ? service.getMyDepartments(user.id) : Future.value([]),
+        future: user != null ? ref.read(departmentServiceProvider).getMyDepartments(user.id) : Future.value([]),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
           final depts = snapshot.data ?? [];

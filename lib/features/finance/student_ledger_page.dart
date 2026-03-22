@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/theme/app_theme.dart';
 import '../dashboard/widgets/app_shell.dart';
 
 class StudentLedgerPage extends ConsumerWidget {

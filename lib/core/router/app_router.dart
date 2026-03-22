@@ -19,12 +19,16 @@ import '../../features/attendance/attendance_page.dart';
 import '../../features/finance/finance_dashboard_page.dart';
 import '../../features/finance/student_ledger_page.dart';
 import '../../features/reports/report_generator_page.dart';
-import '../../features/messaging/messaging_page.dart';
+import '../../features/messaging/messaging_hub_page.dart';
+import '../../features/messaging/school_calendar_page.dart';
 import '../../features/curriculum/syllabus_coverage_page.dart';
 import '../../features/admin/staff_management_page.dart';
 import '../../features/admin/compliance_dashboard_page.dart';
 import '../../features/departments/department_list_page.dart';
 import '../../features/departments/department_dashboard_page.dart';
+import '../../features/departments/deputy_dept_comparison_page.dart';
+import '../../features/clubs/club_list_page.dart';
+import '../../features/clubs/club_detail_page.dart';
 
 import '../../features/health/health_dashboard_page.dart';
 import '../../features/admissions/admissions_dashboard_page.dart';
@@ -40,10 +44,27 @@ import '../../features/admin/timetable_engine_page.dart';
 import '../../features/admin/teacher_capacity_page.dart';
 import '../../features/admin/class_demand_page.dart';
 import '../../features/admin/substitution_management_page.dart';
+import '../../features/finance/finance_placeholder_page.dart';
+import '../../features/finance/student_billing_page.dart';
+import '../../features/finance/payroll_page.dart';
+import '../../features/finance/fee_structure_page.dart';
+import '../../features/finance/expense_page.dart';
+import '../../features/finance/asset_page.dart';
 import '../../features/finance/parent_ledger_page.dart';
 import '../../features/dashboard/widgets/app_shell.dart';
 import '../../features/teaching/teacher_timetable_page.dart';
 import '../../features/teaching/instructional_hub_page.dart';
+import '../../features/tod/tod_roster_page.dart';
+import '../../features/tod/tod_records_page.dart';
+import '../../features/tod/tod_watchlist_page.dart';
+import '../../features/tod/tod_report_page.dart';
+import '../../features/finance/salary_structure_page.dart';
+import '../../features/finance/payroll_batch_page.dart';
+import '../../features/finance/staff_loans_page.dart';
+import '../../features/finance/resource_procurement_page.dart';
+import '../../features/finance/principal_approvals_page.dart';
+import '../../features/finance/teacher_requests_page.dart';
+import '../../features/finance/staff_loan_request_page.dart';
 import '../../core/constants/app_constants.dart';
 
 // ── Route Names ────────────────────────────────────────────────────────────────
@@ -60,8 +81,22 @@ class Routes {
   static const finance        = '/finance';
   static const ledger         = '/finance/ledger/:studentId';
   static const statement      = '/finance/statement';
+  static const financeBilling   = '/finance/billing';
+  static const financeStructure = '/finance/structure';
+  static const financePayments  = '/finance/payments';
+  static const financePayroll   = '/finance/payroll';
+  static const financeLoans     = '/finance/loans';
+  static const financeProcurement = '/finance/procurement';
+  static const String financeApprovals = '/finance/approvals';
+  static const String financeSalaryStructures = '/finance/salary-structures';
+  static const String financePayrollBatch = '/finance/payroll-batch';
+  static const financeExpenses  = '/finance/expenses';
+  static const financeAssets    = '/finance/assets';
+  static const financeAmenities = '/finance/amenities';
+  static const financeReports   = '/finance/reports';
   static const reports        = '/reports';
   static const messaging      = '/messaging';
+  static const messagingCalendar = '/messaging/calendar';
   static const staff          = '/admin/staff';
   static const admissions     = '/admin/admissions';
   static const analytics      = '/admin/analytics';
@@ -87,6 +122,19 @@ class Routes {
   static const instructionalHub = '/teaching/hub/:slotId';
   static const departments    = '/departments';
   static const departmentDetail = '/departments/:id';
+  static const deptComparison = '/departments/comparison';
+  static const clubDetail     = '/clubs/:id';
+  
+  // Staff / Teacher Portals
+  static const staffLoanRequest = '/staff/loans';
+  static const teacherProcurementRequest = '/teacher/procurement';
+  
+  // Teacher on Duty (TOD)
+  static const todRoster      = '/tod/roster';
+  static const todRecords     = '/tod/records';
+  static const todAmber       = '/tod/amber';
+  static const todRed         = '/tod/red';
+  static const todReports     = '/tod/reports';
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -209,7 +257,50 @@ final routerProvider = Provider<GoRouter>((ref) {
               studentId: state.pathParameters['studentId']!,
             ),
           ),
+          GoRoute(path: 'approvals', builder: (context, state) => const PrincipalApprovalsPage()),
+          GoRoute(path: 'salary-structures', builder: (context, state) => const SalaryStructurePage()),
+          GoRoute(path: 'payroll-batch', builder: (context, state) => const PayrollBatchPage()),
         ],
+      ),
+      GoRoute(
+        path: Routes.financeBilling,
+        builder: (_, __) => const AppShell(title: 'Student Billing', body: StudentBillingPage()),
+      ),
+      GoRoute(
+        path: Routes.financeStructure,
+        builder: (_, __) => const AppShell(title: 'Fee Structure', body: FeeStructurePage()),
+      ),
+      GoRoute(
+        path: Routes.financePayments,
+        builder: (_, __) => const AppShell(title: 'Payments & Receipts', body: FinancePlaceHolderPage(title: 'Payments & Receipts')),
+      ),
+      GoRoute(
+        path: Routes.financePayroll,
+        builder: (_, __) => const AppShell(title: 'Staff Payroll', body: PayrollPage()),
+      ),
+      GoRoute(
+        path: Routes.financeLoans,
+        builder: (_, __) => const AppShell(title: 'Staff Loans', body: StaffLoansPage()),
+      ),
+      GoRoute(
+        path: Routes.financeProcurement,
+        builder: (_, __) => const AppShell(title: 'Procurement', body: ResourceProcurementPage()),
+      ),
+      GoRoute(
+        path: Routes.financeExpenses,
+        builder: (_, __) => const AppShell(title: 'Expenses', body: ExpensePage()),
+      ),
+      GoRoute(
+        path: Routes.financeAssets,
+        builder: (_, __) => const AppShell(title: 'Asset & Repairs', body: AssetPage()),
+      ),
+      GoRoute(
+        path: Routes.financeAmenities,
+        builder: (_, __) => const AppShell(title: 'Amenities Billing', body: FinancePlaceHolderPage(title: 'Amenities Billing')),
+      ),
+      GoRoute(
+        path: Routes.financeReports,
+        builder: (_, __) => const AppShell(title: 'Financial Reports', body: FinancePlaceHolderPage(title: 'Financial Reports')),
       ),
       GoRoute(
         path: Routes.reports,
@@ -217,7 +308,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.messaging,
-        builder: (_, __) => const MessagingPage(),
+        builder: (_, __) => const MessagingHubPage(),
+        routes: [
+          GoRoute(
+            path: 'calendar',
+            builder: (_, __) => const SchoolCalendarPage(),
+          ),
+        ],
       ),
       GoRoute(
         path: Routes.staff,
@@ -277,7 +374,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.clubs,
-        builder: (_, __) => const AppShell(title: 'Clubs & Societies', body: Center(child: Text('Extra-curricular dashboard coming soon'))),
+        builder: (_, __) => const ClubListPage(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (_, state) => ClubDetailPage(clubId: state.pathParameters['id']!),
+          ),
+        ],
       ),
       GoRoute(
         path: Routes.inventory,
@@ -316,8 +419,40 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const DepartmentListPage(),
       ),
       GoRoute(
+        path: Routes.deptComparison,
+        builder: (_, __) => const DeputyDeptComparisonPage(),
+      ),
+      GoRoute(
         path: Routes.departmentDetail,
         builder: (_, state) => DepartmentDashboardPage(deptId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: Routes.todRoster,
+        builder: (_, __) => const TodRosterPage(),
+      ),
+      GoRoute(
+        path: Routes.todRecords,
+        builder: (_, __) => const TodRecordsPage(),
+      ),
+      GoRoute(
+        path: Routes.todAmber,
+        builder: (_, __) => const TodWatchlistPage(statusFilter: 'Amber'),
+      ),
+      GoRoute(
+        path: Routes.todRed,
+        builder: (_, __) => const TodWatchlistPage(statusFilter: 'Red'),
+      ),
+      GoRoute(
+        path: Routes.todReports,
+        builder: (_, __) => const TodReportPage(),
+      ),
+      GoRoute(
+        path: Routes.staffLoanRequest,
+        builder: (_, __) => const AppShell(title: 'My Loans & Advances', body: StaffLoanRequestPage()),
+      ),
+      GoRoute(
+        path: Routes.teacherProcurementRequest,
+        builder: (_, __) => const AppShell(title: 'Resource Requests', body: TeacherRequestsPage()),
       ),
     ],
     errorBuilder: (_, state) => Scaffold(

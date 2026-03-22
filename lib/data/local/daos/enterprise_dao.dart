@@ -33,19 +33,6 @@ abstract class EnterpriseDao {
   @Query('SELECT COUNT(*) FROM memo_reads WHERE memoId = :memoId')
   Future<int?> getMemoReadCount(String memoId);
 
-  // ── Clubs & Societies ─────────────────────────────────────────────────────
-  @Query('SELECT * FROM clubs')
-  Future<List<ClubModel>> findAllClubs();
-
-  @Query('SELECT s.* FROM students s JOIN club_memberships m ON s.id = m.studentId WHERE m.clubId = :clubId')
-  Future<List<StudentModel>> findClubMembers(String clubId);
-
-  @insert
-  Future<void> insertClub(ClubModel club);
-
-  @insert
-  Future<void> joinClub(ClubMembership membership);
-
   // ── Staff Leaves ──────────────────────────────────────────────────────────
   @Query('SELECT * FROM staff_leaves WHERE status = "PENDING"')
   Future<List<StaffLeave>> findPendingLeaves();

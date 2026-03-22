@@ -242,6 +242,20 @@ class TeacherDashboard extends ConsumerWidget {
           color: Colors.brown,
           onTap: () => context.push(Routes.departments),
         ),
+        _ActionTile(
+          icon: Icons.monetization_on_outlined,
+          title: 'Loan Requests',
+          subtitle: 'Staff advances',
+          color: Colors.amber.shade700,
+          onTap: () => context.push(Routes.staffLoanRequest),
+        ),
+        _ActionTile(
+          icon: Icons.shopping_cart_checkout_outlined,
+          title: 'Store Request',
+          subtitle: 'Class resources',
+          color: Colors.teal.shade700,
+          onTap: () => context.push(Routes.teacherProcurementRequest),
+        ),
       ],
     );
   }

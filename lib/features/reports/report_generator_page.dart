@@ -8,10 +8,8 @@ import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../../core/constants/app_constants.dart';
-import '../../core/theme/app_theme.dart';
 import '../dashboard/widgets/app_shell.dart';
 import '../../data/sync/export_service.dart';
-import '../../data/local/app_database.dart';
 import '../auth/auth_provider.dart';
 import '../../core/services/cbc_aggregation_service.dart';
 
@@ -77,8 +75,8 @@ class _ReportGeneratorPageState extends ConsumerState<ReportGeneratorPage> {
         }
       }
 
-      final totalPaid = await db.financeDao.totalPaid(student.id) ?? 0.0;
-      final balance = 15000.0 - totalPaid; // Fixed term fee
+      final billing = await db.financeErpDao.getBillingByStudent(student.id);
+      final balance = billing?.balance ?? 0.0; 
       final isDefaulter = balance > 1000; // Allow small balance
       
       doc.addPage(pw.Page(
