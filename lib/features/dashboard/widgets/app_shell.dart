@@ -375,31 +375,66 @@ class _AppShellState extends ConsumerState<AppShell> {
       }
     }
 
-    // Special Modules
-    if (level == AppConstants.roleNurse)
-      items.add(_NavItem(
-          Icons.medical_services_outlined, 'Health Center', Routes.health));
-    if (level == AppConstants.roleCatering)
-      items.add(
-          _NavItem(Icons.restaurant_outlined, 'Catering', Routes.catering));
-    if (level == AppConstants.roleSecurity)
-      items.add(_NavItem(Icons.security_outlined, 'Security', Routes.security));
-
-    if (level != AppConstants.roleParent && level != AppConstants.roleStudent) {
-      items.add(_NavItem(null, 'STAFF SELF SERVICE', '', isHeader: true));
-      items.add(_NavItem(
-          Icons.credit_card_outlined, 'My Loans', Routes.staffLoanRequest));
-      items.add(
-          _NavItem(Icons.event_available_outlined, 'My Leave', Routes.leave));
+    // ── Operational Role-Specific Module Menus ───────────────────────────────
+    if (level == AppConstants.roleNurse) {
+      items.add(_NavItem(null, 'CLINIC', '', isHeader: true));
+      items.add(_NavItem(Icons.medical_services_outlined, 'Health Dashboard', Routes.health));
+    }
+    if (level == AppConstants.roleCatering) {
+      items.add(_NavItem(null, 'CATERING', '', isHeader: true));
+      items.add(_NavItem(Icons.restaurant_outlined, 'Kitchen & Meals', Routes.catering));
+    }
+    if (level == AppConstants.roleSecurity) {
+      items.add(_NavItem(null, 'SECURITY', '', isHeader: true));
+      items.add(_NavItem(Icons.security_outlined, 'Gate & Visitors', Routes.security));
+      items.add(_NavItem(Icons.directions_car_outlined, 'Vehicle Passes', Routes.security));
+    }
+    if (level == AppConstants.roleReceptionist) {
+      items.add(_NavItem(null, 'FRONT DESK', '', isHeader: true));
+      items.add(_NavItem(Icons.desk_outlined, 'Reception Hub', Routes.reception));
+    }
+    if (level == AppConstants.roleBoardingMaster) {
+      items.add(_NavItem(null, 'BOARDING', '', isHeader: true));
+      items.add(_NavItem(Icons.apartment_outlined, 'Boarding Master', Routes.boarding));
+    }
+    if (level == AppConstants.roleLibrarian) {
+      items.add(_NavItem(null, 'LIBRARY', '', isHeader: true));
+      items.add(_NavItem(Icons.local_library_outlined, 'Library System', Routes.library));
+    }
+    if (level == AppConstants.roleFleetManager) {
+      items.add(_NavItem(null, 'FLEET', '', isHeader: true));
+      items.add(_NavItem(Icons.directions_bus_outlined, 'Fleet Management', Routes.fleet));
+      items.add(_NavItem(Icons.travel_explore, 'Trips & Tours', Routes.trips));
+    }
+    if (level == AppConstants.roleHR) {
+      items.add(_NavItem(null, 'HUMAN RESOURCES', '', isHeader: true));
+      items.add(_NavItem(Icons.badge_outlined, 'HR Office', Routes.hr));
+      items.add(_NavItem(Icons.event_note_outlined, 'Leave Manager', Routes.leave));
+    }
+    if (level == AppConstants.roleStoreKeeper) {
+      items.add(_NavItem(null, 'STORES', '', isHeader: true));
+      items.add(_NavItem(Icons.inventory_outlined, 'Storeroom', Routes.store));
+      items.add(_NavItem(Icons.people_outline, 'Casual Staff', Routes.casualStaff));
+    }
+    if (level == AppConstants.roleAdmissions) {
+      items.add(_NavItem(null, 'ADMISSIONS', '', isHeader: true));
+      items.add(_NavItem(Icons.assignment_turned_in_outlined, 'Admissions Portal', Routes.admissions));
     }
 
-    items.add(
-        _NavItem(Icons.groups_outlined, 'Clubs & Societies', Routes.clubs));
+    // ── 🟡 STAFF SELF SERVICE (all non-parent, non-student staff) ────────────
+    if (level != AppConstants.roleParent && level != AppConstants.roleStudent) {
+      items.add(_NavItem(null, 'SELF SERVICE', '', isHeader: true));
+      items.add(_NavItem(Icons.event_available_outlined, 'My Leave', Routes.leave));
+      items.add(_NavItem(Icons.credit_card_outlined, 'My Loans', Routes.staffLoanRequest));
+      items.add(_NavItem(Icons.groups_outlined, 'Clubs & Societies', Routes.clubs));
+      items.add(_NavItem(Icons.forum_outlined, 'Messaging Hub', Routes.messaging));
+    }
 
     // ── 🟢 CONNECTIVE ENGINES ────────────────────────────────────────────────
-    items.add(_NavItem(null, 'CONNECTIVE', '', isHeader: true));
-    items
-        .add(_NavItem(Icons.forum_outlined, 'Messaging Hub', Routes.messaging));
+    if (level <= AppConstants.roleHeadteacher || level == AppConstants.roleAccountant) {
+      items.add(_NavItem(null, 'CONNECTIVE', '', isHeader: true));
+      items.add(_NavItem(Icons.forum_outlined, 'Messaging Hub', Routes.messaging));
+    }
 
     if (level <= AppConstants.roleHeadteacher) {
       items.add(_NavItem(
@@ -412,20 +447,15 @@ class _AppShellState extends ConsumerState<AppShell> {
     }
 
     // ── 🟣 INFRASTRUCTURE ────────────────────────────────────────────────────
-    items.add(_NavItem(null, 'INFRASTRUCTURE', '', isHeader: true));
-
     if (level <= AppConstants.roleHeadteacher) {
+      items.add(_NavItem(null, 'INFRASTRUCTURE', '', isHeader: true));
       items.add(_NavItem(
           Icons.manage_accounts_outlined, 'Faculty & RBAC', Routes.staff));
       items.add(_NavItem(Icons.assignment_turned_in_outlined, 'Admissions',
           Routes.admissions));
       items.add(_NavItem(Icons.policy_outlined, 'Audit Logs', Routes.audit));
-    }
-
-    items.add(_NavItem(
-        Icons.inventory_2_outlined, 'Asset Inventory', Routes.inventory));
-    if (level <= AppConstants.roleHeadteacher ||
-        user.hasFlag(AppConstants.flagHOD)) {
+      items.add(_NavItem(
+          Icons.inventory_2_outlined, 'Asset Inventory', Routes.inventory));
       items.add(
           _NavItem(Icons.event_note_outlined, 'Leave Manager', Routes.leave));
     }

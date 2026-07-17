@@ -675,6 +675,43 @@ class DocumentTemplates {
           ),
         ];
 
+      case 'catering':
+        return [
+          FormTemplate(
+            title: 'Daily Meal Ingredient Sheet',
+            description: 'Inventory draw sheet specifying quantities requested from Store Keeper.',
+            defaultFields: {
+              'Date': '17 July 2026',
+              'Meal Type': 'Lunch',
+              'Menu': 'Maize and Beans (Githeri) with shredded cabbage',
+              'Servings Count': '450 portions',
+              'Requested Ingredients': '90kg Beans, 110kg Maize, 15 Jerrycans Cooking Oil, 40 Cabbages',
+              'Cateress Signature': 'Cateress Millicent',
+            },
+          ),
+          FormTemplate(
+            title: 'Student Dietary Allergy List',
+            description: 'Registry extract showing students with custom dietary requirements.',
+            defaultFields: {
+              'Active Student Count': '4 Students',
+              'Allergy Alerts': 'John Doe (Peanuts), Jane Roe (Gluten/Celiac), Mary Smith (Lactose)',
+              'Special Meal Prepared': 'Gluten-free sorghum porridge, dairy-free cabbage alternatives',
+            },
+          ),
+          FormTemplate(
+            title: 'Special Board & Banquet Menu Request',
+            description: 'Approval request for special banquets, school events, or visiting school lunches.',
+            defaultFields: {
+              'Event Name': 'Annual Board of Management Meeting',
+              'Expected Guests': '15 Board members',
+              'Date of Event': '28 July 2026',
+              'Proposed Menu': 'Brown wholemeal chapati, roasted beef stew, traditional greens, fresh fruit punch salad',
+              'Estimated Extra Budget': 'KSh 12,500',
+              'Approved By': 'Principal Director Office',
+            },
+          ),
+        ];
+
       default:
         return [];
     }
