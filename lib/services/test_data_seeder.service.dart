@@ -40,6 +40,40 @@ class TestDataSeeder {
 
     // 7. Seed Departments
     await _seedDepartments(db, teachers);
+
+    // 8. Seed Operational Staff accounts
+    await _seedOperationalStaff(db);
+  }
+
+  /// Seeds one login account per operational role for testing purposes.
+  /// All accounts share the password: admin123
+  Future<void> _seedOperationalStaff(dynamic db) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final bytes = utf8.encode('admin123' + 'cbc_salt_2026');
+    final hash = sha256.convert(bytes).toString();
+
+    final operationalUsers = [
+      UserModel(id: 'OPS_FLEET',       name: 'Fleet Manager',      email: 'fleet@school.com',        passwordHash: hash, roleLevel: AppConstants.roleFleetManager,   isActive: 1, createdAt: now),
+      UserModel(id: 'OPS_SECURITY',    name: 'Security Officer',   email: 'security@school.com',     passwordHash: hash, roleLevel: AppConstants.roleSecurity,       isActive: 1, createdAt: now),
+      UserModel(id: 'OPS_NURSE',       name: 'School Nurse',       email: 'nurse@school.com',        passwordHash: hash, roleLevel: AppConstants.roleNurse,          isActive: 1, createdAt: now),
+      UserModel(id: 'OPS_CATERING',    name: 'Cateress',           email: 'catering@school.com',     passwordHash: hash, roleLevel: AppConstants.roleCatering,       isActive: 1, createdAt: now),
+      UserModel(id: 'OPS_BOARDING',    name: 'Boarding Master',    email: 'boarding@school.com',     passwordHash: hash, roleLevel: AppConstants.roleBoardingMaster,  isActive: 1, createdAt: now),
+      UserModel(id: 'OPS_RECEPTION',   name: 'Receptionist',       email: 'reception@school.com',    passwordHash: hash, roleLevel: AppConstants.roleReceptionist,   isActive: 1, createdAt: now),
+      UserModel(id: 'OPS_LIBRARIAN',   name: 'Librarian',          email: 'library@school.com',      passwordHash: hash, roleLevel: AppConstants.roleLibrarian,      isActive: 1, createdAt: now),
+      UserModel(id: 'OPS_STORE',       name: 'Store Keeper',       email: 'store@school.com',        passwordHash: hash, roleLevel: AppConstants.roleStoreKeeper,    isActive: 1, createdAt: now),
+      UserModel(id: 'OPS_HR',          name: 'HR Officer',         email: 'hr@school.com',           passwordHash: hash, roleLevel: AppConstants.roleHR,             isActive: 1, createdAt: now),
+      UserModel(id: 'OPS_ACCOUNTANT',  name: 'School Bursar',      email: 'bursar@school.com',       passwordHash: hash, roleLevel: AppConstants.roleAccountant,     isActive: 1, createdAt: now),
+      UserModel(id: 'OPS_ADMISSIONS',  name: 'Admissions Officer', email: 'admissions@school.com',   passwordHash: hash, roleLevel: AppConstants.roleAdmissions,     isActive: 1, createdAt: now),
+      UserModel(id: 'OPS_DIRECTOR',    name: 'School Director',    email: 'director@school.com',     passwordHash: hash, roleLevel: AppConstants.roleDirector,      isActive: 1, createdAt: now),
+      UserModel(id: 'OPS_HEAD',        name: 'Head Teacher',       email: 'headteacher@school.com',  passwordHash: hash, roleLevel: AppConstants.roleHeadteacher,   isActive: 1, createdAt: now),
+    ];
+
+    for (final user in operationalUsers) {
+      final existing = await db.userDao.findById(user.id);
+      if (existing == null) {
+        await db.userDao.insertUser(user);
+      }
+    }
   }
 
   Future<void> _seedSubjects(dynamic db) async {
