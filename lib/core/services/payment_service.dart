@@ -3,7 +3,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
-import '../../data/local/app_database.dart';
 import '../../data/models/finance_model.dart';
 import '../../features/auth/auth_provider.dart';
 import 'audit_service.dart';
@@ -44,9 +43,8 @@ class PaymentService {
     final user = _ref.read(currentUserProvider);
     final now = DateTime.now().millisecondsSinceEpoch;
 
-    // 1. Get current balance (simplified: total fee - total paid)
-    // In a real robust system, we would have a balance field or historical snapshot
-    final totalPaidSoFar = await db.financeDao.totalPaid(studentId) ?? 0.0;
+    // 1. Fetch current total paid (used to validate balance in full implementations)
+    await db.financeDao.totalPaid(studentId); // balance tracking placeholder
     
     final transaction = FeeTransactionModel(
       id: const Uuid().v4(),

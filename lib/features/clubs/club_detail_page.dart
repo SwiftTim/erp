@@ -7,7 +7,6 @@ import '../../core/theme/app_theme.dart';
 import '../../features/auth/auth_provider.dart';
 import '../../data/models/club_model.dart';
 import '../../data/models/student_model.dart';
-import '../../data/local/app_database.dart';
 import 'club_service.dart';
 
 class ClubDetailPage extends ConsumerStatefulWidget {

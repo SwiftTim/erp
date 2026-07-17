@@ -10,7 +10,6 @@ import '../../features/auth/auth_provider.dart';
 import '../../features/dashboard/widgets/app_shell.dart';
 import '../../data/models/club_model.dart';
 import '../../data/models/user_model.dart';
-import '../../data/local/app_database.dart';
 import 'club_service.dart';
 
 class ClubListPage extends ConsumerStatefulWidget {

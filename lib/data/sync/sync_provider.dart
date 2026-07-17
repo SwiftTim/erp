@@ -45,7 +45,7 @@ class SyncNotifier extends StateNotifier<SyncState> {
     state = state.copyWith(status: SyncStatus.syncing);
     
     try {
-      final service = SyncService(_db!);
+      final service = SyncService(_db);
       await service.syncAll();
       state = state.copyWith(status: SyncStatus.success, lastSyncTime: DateTime.now());
       

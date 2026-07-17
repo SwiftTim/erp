@@ -1,8 +1,6 @@
 // lib/data/models/club_model.dart
 
 import 'package:floor/floor.dart';
-import 'user_model.dart';
-import 'department_model.dart'; // Clubs are under Co-Curricular Dept
 
 @Entity(tableName: 'clubs')
 class ClubModel {

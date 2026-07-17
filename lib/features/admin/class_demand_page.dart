@@ -4,7 +4,6 @@ import 'package:uuid/uuid.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
-import '../../data/local/app_database.dart';
 import '../../data/models/curriculum_models.dart';
 import '../../data/models/timetable_models.dart';
 import '../auth/auth_provider.dart';

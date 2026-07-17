@@ -2721,6 +2721,37 @@ class _$EnterpriseDao extends EnterpriseDao {
   }
 
   @override
+  Future<List<StaffLeave>> findAllLeaves() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM staff_leaves ORDER BY startDate DESC',
+        mapper: (Map<String, Object?> row) => StaffLeave(
+            id: row['id'] as String,
+            staffId: row['staffId'] as String,
+            leaveType: row['leaveType'] as String,
+            startDate: row['startDate'] as int,
+            endDate: row['endDate'] as int,
+            reason: row['reason'] as String,
+            status: row['status'] as String,
+            approvedBy: row['approvedBy'] as String?));
+  }
+
+  @override
+  Future<List<StaffLeave>> findLeavesByStaff(String staffId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM staff_leaves WHERE staffId = ?1 ORDER BY startDate DESC',
+        mapper: (Map<String, Object?> row) => StaffLeave(
+            id: row['id'] as String,
+            staffId: row['staffId'] as String,
+            leaveType: row['leaveType'] as String,
+            startDate: row['startDate'] as int,
+            endDate: row['endDate'] as int,
+            reason: row['reason'] as String,
+            status: row['status'] as String,
+            approvedBy: row['approvedBy'] as String?),
+        arguments: [staffId]);
+  }
+
+  @override
   Future<List<StaffLeave>> findPendingLeaves() async {
     return _queryAdapter.queryList(
         'SELECT * FROM staff_leaves WHERE status = \"PENDING\"',

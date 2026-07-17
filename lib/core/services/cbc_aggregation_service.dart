@@ -1,7 +1,6 @@
 // lib/core/services/cbc_aggregation_service.dart
 
 import '../../data/local/app_database.dart';
-import '../../data/models/assessment_model.dart';
 import '../constants/app_constants.dart';
 
 class CBCScore {

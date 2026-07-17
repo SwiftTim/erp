@@ -7,7 +7,6 @@ import '../../data/models/student_model.dart';
 import '../../data/models/finance_model.dart';
 import '../auth/auth_provider.dart';
 import '../dashboard/widgets/app_shell.dart';
-import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import 'widgets/mpesa_payment_dialog.dart';
 import '../../core/services/finance_pdf_service.dart';

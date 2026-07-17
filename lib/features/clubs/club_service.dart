@@ -3,9 +3,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../auth/auth_provider.dart';
-import '../../data/local/app_database.dart';
 import '../../data/models/club_model.dart';
-import '../../data/models/student_model.dart';
 
 final clubServiceProvider = Provider((ref) => ClubService(ref));
 

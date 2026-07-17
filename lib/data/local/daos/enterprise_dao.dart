@@ -2,7 +2,6 @@
 
 import 'package:floor/floor.dart';
 import '../../models/enterprise_models.dart';
-import '../../models/student_model.dart';
 
 @dao
 abstract class EnterpriseDao {
@@ -16,12 +15,12 @@ abstract class EnterpriseDao {
   @insert
   Future<void> insertAssignment(TeachingAssignment assignment);
 
-
   // ── Official Memos ────────────────────────────────────────────────────────
   @Query('SELECT * FROM official_memos ORDER BY createdAt DESC')
   Future<List<OfficialMemo>> findAllMemos();
 
-  @Query('SELECT * FROM official_memos WHERE targetGroup = :group OR targetGroup = "ALL" ORDER BY createdAt DESC')
+  @Query(
+      'SELECT * FROM official_memos WHERE targetGroup = :group OR targetGroup = "ALL" ORDER BY createdAt DESC')
   Future<List<OfficialMemo>> findMemosForGroup(String group);
 
   @insert
@@ -34,6 +33,13 @@ abstract class EnterpriseDao {
   Future<int?> getMemoReadCount(String memoId);
 
   // ── Staff Leaves ──────────────────────────────────────────────────────────
+  @Query('SELECT * FROM staff_leaves ORDER BY startDate DESC')
+  Future<List<StaffLeave>> findAllLeaves();
+
+  @Query(
+      'SELECT * FROM staff_leaves WHERE staffId = :staffId ORDER BY startDate DESC')
+  Future<List<StaffLeave>> findLeavesByStaff(String staffId);
+
   @Query('SELECT * FROM staff_leaves WHERE status = "PENDING"')
   Future<List<StaffLeave>> findPendingLeaves();
 
@@ -50,12 +56,12 @@ abstract class EnterpriseDao {
   @insert
   Future<void> insertAsset(InventoryAsset asset);
 
-  @Query('SELECT * FROM asset_maintenance_logs WHERE asset_id = :assetId ORDER BY serviced_at DESC')
+  @Query(
+      'SELECT * FROM asset_maintenance_logs WHERE asset_id = :assetId ORDER BY serviced_at DESC')
   Future<List<AssetMaintenanceLog>> findMaintenanceLogs(String assetId);
 
   @insert
   Future<void> insertMaintenanceLog(AssetMaintenanceLog log);
-
 
   // ── System Logs ───────────────────────────────────────────────────────────
   @Query('SELECT * FROM system_activity_logs ORDER BY timestamp DESC LIMIT 100')
@@ -64,10 +70,11 @@ abstract class EnterpriseDao {
   @insert
   Future<void> logActivity(SystemLog log);
 
-
   // ── Substitutions ──────────────────────────────────────────────────────────
-  @Query('SELECT * FROM substitutions WHERE substitute_teacher_id = :teacherId AND date = :date')
-  Future<List<Substitution>> findActiveSubstitutions(String teacherId, int date);
+  @Query(
+      'SELECT * FROM substitutions WHERE substitute_teacher_id = :teacherId AND date = :date')
+  Future<List<Substitution>> findActiveSubstitutions(
+      String teacherId, int date);
 
   @Query('SELECT * FROM substitutions WHERE date = :date')
   Future<List<Substitution>> findAllSubstitutionsByDate(int date);
@@ -79,7 +86,8 @@ abstract class EnterpriseDao {
   Future<void> deleteSubstitution(Substitution substitution);
 
   // ── Staff Attendance ──────────────────────────────────────────────────────
-  @Query('SELECT * FROM staff_attendance WHERE staff_id = :staffId AND date = :date')
+  @Query(
+      'SELECT * FROM staff_attendance WHERE staff_id = :staffId AND date = :date')
   Future<StaffAttendance?> findStaffAttendance(String staffId, int date);
 
   @insert
@@ -91,5 +99,3 @@ abstract class EnterpriseDao {
   @Query('SELECT * FROM staff_attendance WHERE date = :date')
   Future<List<StaffAttendance>> findAllStaffAttendance(int date);
 }
-
-

@@ -1,7 +1,5 @@
 import 'package:floor/floor.dart';
 import '../../models/tod_model.dart';
-import '../../models/user_model.dart';
-import '../../models/student_model.dart';
 
 @dao
 abstract class TodDao {

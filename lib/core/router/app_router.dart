@@ -40,6 +40,7 @@ import '../../features/security/visitor_dashboard_page.dart';
 import '../../features/counseling/counseling_dashboard_page.dart';
 import '../../features/admin/inventory_management_page.dart';
 import '../../features/admin/audit_log_page.dart';
+import '../../features/admin/leave_management_page.dart';
 import '../../features/admin/timetable_engine_page.dart';
 import '../../features/admin/teacher_capacity_page.dart';
 import '../../features/admin/class_demand_page.dart';
@@ -65,76 +66,80 @@ import '../../features/finance/resource_procurement_page.dart';
 import '../../features/finance/principal_approvals_page.dart';
 import '../../features/finance/teacher_requests_page.dart';
 import '../../features/finance/staff_loan_request_page.dart';
+import '../../features/finance/payments_receipts_page.dart';
+import '../../features/finance/finance_reports_page.dart';
+import '../../features/finance/finance_settings_page.dart';
 import '../../core/constants/app_constants.dart';
 
 // ── Route Names ────────────────────────────────────────────────────────────────
 class Routes {
-  static const login          = '/login';
-  static const dashboard      = '/';
-  static const students       = '/students';
-  static const studentDetail  = '/students/:id';
-  static const studentNew     = '/students/new';
-  static const assessment     = '/assessment';
-  static const matrix         = '/matrix';
-  static const evidence       = '/evidence/:studentId';
-  static const attendance     = '/attendance';
-  static const finance        = '/finance';
-  static const ledger         = '/finance/ledger/:studentId';
-  static const statement      = '/finance/statement';
-  static const financeBilling   = '/finance/billing';
+  static const login = '/login';
+  static const dashboard = '/';
+  static const students = '/students';
+  static const studentDetail = '/students/:id';
+  static const studentNew = '/students/new';
+  static const assessment = '/assessment';
+  static const matrix = '/matrix';
+  static const evidence = '/evidence/:studentId';
+  static const attendance = '/attendance';
+  static const finance = '/finance';
+  static const ledger = '/finance/ledger/:studentId';
+  static const statement = '/finance/statement';
+  static const financeBilling = '/finance/billing';
   static const financeStructure = '/finance/structure';
-  static const financePayments  = '/finance/payments';
-  static const financePayroll   = '/finance/payroll';
-  static const financeLoans     = '/finance/loans';
+  static const financePayments = '/finance/payments';
+  static const financePayroll = '/finance/payroll';
+  static const financeLoans = '/finance/loans';
   static const financeProcurement = '/finance/procurement';
   static const String financeApprovals = '/finance/approvals';
   static const String financeSalaryStructures = '/finance/salary-structures';
   static const String financePayrollBatch = '/finance/payroll-batch';
-  static const financeExpenses  = '/finance/expenses';
-  static const financeAssets    = '/finance/assets';
+  static const financeExpenses = '/finance/expenses';
+  static const financeAssets = '/finance/assets';
   static const financeAmenities = '/finance/amenities';
-  static const financeReports   = '/finance/reports';
-  static const reports        = '/reports';
-  static const messaging      = '/messaging';
+  static const financeReports = '/finance/reports';
+  static const financeSettings = '/finance/settings';
+  static const reports = '/reports';
+  static const messaging = '/messaging';
   static const messagingCalendar = '/messaging/calendar';
-  static const staff          = '/admin/staff';
-  static const admissions     = '/admin/admissions';
-  static const analytics      = '/admin/analytics';
-  static const moderation     = '/assessment/moderation';
-  static const health         = '/operations/health';
-  static const catering       = '/operations/catering';
-  static const security       = '/operations/security';
-  static const discipline     = '/specialty/discipline';
-  static const counseling     = '/specialty/counseling';
-  static const pathway        = '/juniorschool/pathway';
-  static const timetable      = '/timetable';
+  static const staff = '/admin/staff';
+  static const admissions = '/admin/admissions';
+  static const analytics = '/admin/analytics';
+  static const moderation = '/assessment/moderation';
+  static const health = '/operations/health';
+  static const catering = '/operations/catering';
+  static const security = '/operations/security';
+  static const discipline = '/specialty/discipline';
+  static const counseling = '/specialty/counseling';
+  static const pathway = '/juniorschool/pathway';
+  static const timetable = '/timetable';
   static const timetableCapacity = '/timetable/capacity';
   static const timetableDemand = '/timetable/demand';
-  static const clubs          = '/clubs';
-  static const inventory      = '/admin/inventory';
-  static const leave          = '/admin/leave';
-  static const audit          = '/admin/audit';
-  static const compliance     = '/admin/compliance';
-  static const substitutions  = '/admin/substitutions';
-  static const syllabus       = '/curriculum/syllabus';
-  static const timetableEngine   = '/timetable';  // alias for engine page
+  static const clubs = '/clubs';
+  static const inventory = '/admin/inventory';
+  static const leave = '/leave';
+  static const audit = '/admin/audit';
+  static const compliance = '/admin/compliance';
+  static const substitutions = '/admin/substitutions';
+  static const syllabus = '/curriculum/syllabus';
+  static const timetableEngine = '/timetable'; // alias for engine page
   static const teacherTimetable = '/teaching/timetable';
   static const instructionalHub = '/teaching/hub/:slotId';
-  static const departments    = '/departments';
+  static const departments = '/departments';
   static const departmentDetail = '/departments/:id';
   static const deptComparison = '/departments/comparison';
-  static const clubDetail     = '/clubs/:id';
-  
+  static const clubDetail = '/clubs/:id';
+
   // Staff / Teacher Portals
   static const staffLoanRequest = '/staff/loans';
   static const teacherProcurementRequest = '/teacher/procurement';
-  
+
   // Teacher on Duty (TOD)
-  static const todRoster      = '/tod/roster';
-  static const todRecords     = '/tod/records';
-  static const todAmber       = '/tod/amber';
-  static const todRed         = '/tod/red';
-  static const todReports     = '/tod/reports';
+  static const todRoster = '/tod/roster';
+  static const todRecords = '/tod/records';
+  static const todAmber = '/tod/amber';
+  static const todRed = '/tod/red';
+  static const todReports = '/tod/reports';
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -154,34 +159,35 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (user == null) return null; // Should not happen
 
         final location = state.matchedLocation;
-        
+
         // Admin-only modules (Role Level 1-2)
-        final isAdminRoute = location.contains('/admin/') || 
-                            location == Routes.staff || 
-                            location == Routes.audit ||
-                            location == Routes.compliance;
-                            
+        final isAdminRoute = location.contains('/admin/') ||
+            location == Routes.staff ||
+            location == Routes.audit ||
+            location == Routes.compliance;
+
         if (isAdminRoute && user.roleLevel > AppConstants.roleDeputy) {
           return Routes.dashboard; // Redirect common teachers away from admin
         }
 
         // Finance-only modules (Role Level 1-2 or Accountant)
         final isFinanceRoute = location.contains('/finance/');
-        if (isFinanceRoute && 
-            user.roleLevel > AppConstants.roleDeputy && 
+        if (isFinanceRoute &&
+            user.roleLevel > AppConstants.roleDeputy &&
             user.roleLevel != AppConstants.roleAccountant) {
           return Routes.dashboard;
         }
 
         // Health-only
-        if (location == Routes.health && user.roleLevel != AppConstants.roleNurse && user.roleLevel > AppConstants.roleDeputy) {
+        if (location == Routes.health &&
+            user.roleLevel != AppConstants.roleNurse &&
+            user.roleLevel > AppConstants.roleDeputy) {
           return Routes.dashboard;
         }
       }
 
       return null;
     },
-
     routes: [
       GoRoute(
         path: Routes.login,
@@ -225,7 +231,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: ':id',
-            builder: (_, state) => StudentDetailPage(id: state.pathParameters['id']!),
+            builder: (_, state) =>
+                StudentDetailPage(id: state.pathParameters['id']!),
           ),
         ],
       ),
@@ -257,50 +264,72 @@ final routerProvider = Provider<GoRouter>((ref) {
               studentId: state.pathParameters['studentId']!,
             ),
           ),
-          GoRoute(path: 'approvals', builder: (context, state) => const PrincipalApprovalsPage()),
-          GoRoute(path: 'salary-structures', builder: (context, state) => const SalaryStructurePage()),
-          GoRoute(path: 'payroll-batch', builder: (context, state) => const PayrollBatchPage()),
+          GoRoute(
+              path: 'approvals',
+              builder: (context, state) => const PrincipalApprovalsPage()),
+          GoRoute(
+              path: 'salary-structures',
+              builder: (context, state) => const SalaryStructurePage()),
+          GoRoute(
+              path: 'payroll-batch',
+              builder: (context, state) => const PayrollBatchPage()),
         ],
       ),
       GoRoute(
         path: Routes.financeBilling,
-        builder: (_, __) => const AppShell(title: 'Student Billing', body: StudentBillingPage()),
+        builder: (_, __) => const AppShell(
+            title: 'Student Billing', body: StudentBillingPage()),
       ),
       GoRoute(
         path: Routes.financeStructure,
-        builder: (_, __) => const AppShell(title: 'Fee Structure', body: FeeStructurePage()),
+        builder: (_, __) =>
+            const AppShell(title: 'Fee Structure', body: FeeStructurePage()),
       ),
       GoRoute(
         path: Routes.financePayments,
-        builder: (_, __) => const AppShell(title: 'Payments & Receipts', body: FinancePlaceHolderPage(title: 'Payments & Receipts')),
+        builder: (_, __) => const AppShell(
+            title: 'Payments & Receipts', body: PaymentsReceiptsPage()),
       ),
       GoRoute(
         path: Routes.financePayroll,
-        builder: (_, __) => const AppShell(title: 'Staff Payroll', body: PayrollPage()),
+        builder: (_, __) =>
+            const AppShell(title: 'Staff Payroll', body: PayrollPage()),
       ),
       GoRoute(
         path: Routes.financeLoans,
-        builder: (_, __) => const AppShell(title: 'Staff Loans', body: StaffLoansPage()),
+        builder: (_, __) =>
+            const AppShell(title: 'Staff Loans', body: StaffLoansPage()),
       ),
       GoRoute(
         path: Routes.financeProcurement,
-        builder: (_, __) => const AppShell(title: 'Procurement', body: ResourceProcurementPage()),
+        builder: (_, __) => const AppShell(
+            title: 'Procurement', body: ResourceProcurementPage()),
       ),
       GoRoute(
         path: Routes.financeExpenses,
-        builder: (_, __) => const AppShell(title: 'Expenses', body: ExpensePage()),
+        builder: (_, __) =>
+            const AppShell(title: 'Expenses', body: ExpensePage()),
       ),
       GoRoute(
         path: Routes.financeAssets,
-        builder: (_, __) => const AppShell(title: 'Asset & Repairs', body: AssetPage()),
+        builder: (_, __) =>
+            const AppShell(title: 'Asset & Repairs', body: AssetPage()),
       ),
       GoRoute(
         path: Routes.financeAmenities,
-        builder: (_, __) => const AppShell(title: 'Amenities Billing', body: FinancePlaceHolderPage(title: 'Amenities Billing')),
+        builder: (_, __) => const AppShell(
+            title: 'Amenities Billing',
+            body: FinancePlaceHolderPage(title: 'Amenities Billing')),
       ),
       GoRoute(
         path: Routes.financeReports,
-        builder: (_, __) => const AppShell(title: 'Financial Reports', body: FinancePlaceHolderPage(title: 'Financial Reports')),
+        builder: (_, __) => const AppShell(
+            title: 'Financial Reports', body: FinanceReportsPage()),
+      ),
+      GoRoute(
+        path: Routes.financeSettings,
+        builder: (_, __) => const AppShell(
+            title: 'Payroll Settings', body: FinanceSettingsPage()),
       ),
       GoRoute(
         path: Routes.reports,
@@ -378,7 +407,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: ':id',
-            builder: (_, state) => ClubDetailPage(clubId: state.pathParameters['id']!),
+            builder: (_, state) =>
+                ClubDetailPage(clubId: state.pathParameters['id']!),
           ),
         ],
       ),
@@ -388,7 +418,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.leave,
-        builder: (_, __) => const AppShell(title: 'Staff Leave', body: Center(child: Text('Leave Approval Workflow coming soon'))),
+        builder: (_, __) =>
+            const AppShell(title: 'Staff Leave', body: LeaveManagementPage()),
       ),
       GoRoute(
         path: Routes.audit,
@@ -412,7 +443,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.instructionalHub,
-        builder: (_, state) => InstructionalHubPage(slotId: state.pathParameters['slotId']!),
+        builder: (_, state) =>
+            InstructionalHubPage(slotId: state.pathParameters['slotId']!),
       ),
       GoRoute(
         path: Routes.departments,
@@ -424,7 +456,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.departmentDetail,
-        builder: (_, state) => DepartmentDashboardPage(deptId: state.pathParameters['id']!),
+        builder: (_, state) =>
+            DepartmentDashboardPage(deptId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: Routes.todRoster,
@@ -448,11 +481,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.staffLoanRequest,
-        builder: (_, __) => const AppShell(title: 'My Loans & Advances', body: StaffLoanRequestPage()),
+        builder: (_, __) => const AppShell(
+            title: 'My Loans & Advances', body: StaffLoanRequestPage()),
       ),
       GoRoute(
         path: Routes.teacherProcurementRequest,
-        builder: (_, __) => const AppShell(title: 'Resource Requests', body: TeacherRequestsPage()),
+        builder: (_, __) => const AppShell(
+            title: 'Resource Requests', body: TeacherRequestsPage()),
       ),
     ],
     errorBuilder: (_, state) => Scaffold(

@@ -1,7 +1,6 @@
 // lib/core/services/audit_service.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/local/app_database.dart';
 import '../../data/models/enterprise_models.dart';
 import '../../features/auth/auth_provider.dart';
 

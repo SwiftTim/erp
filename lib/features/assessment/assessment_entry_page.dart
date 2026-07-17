@@ -13,7 +13,6 @@ import '../../data/models/curriculum_models.dart';
 import '../auth/auth_provider.dart';
 import '../dashboard/widgets/app_shell.dart';
 import 'widgets/rubric_button.dart';
-import 'package:go_router/go_router.dart';
 
 class TeacherLesson {
   final SchoolClassModel schoolClass;

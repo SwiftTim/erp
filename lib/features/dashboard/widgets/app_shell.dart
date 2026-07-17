@@ -11,6 +11,7 @@ import '../../auth/auth_provider.dart';
 import '../../../data/models/user_model.dart';
 import 'dart:async';
 import '../../tod/tod_provider.dart';
+import '../../messaging/messaging_hub_provider.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   final String title;
@@ -31,7 +32,6 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 final _dismissedEmergencyProvider = StateProvider<String?>((ref) => null);
-
 
 class _AppShellState extends ConsumerState<AppShell> {
   Timer? _inactivityTimer;
@@ -57,7 +57,8 @@ class _AppShellState extends ConsumerState<AppShell> {
         context.go(Routes.login);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Session Expired: You were logged out due to inactivity.'),
+            content:
+                Text('Session Expired: You were logged out due to inactivity.'),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 5),
           ),
@@ -71,9 +72,16 @@ class _AppShellState extends ConsumerState<AppShell> {
     final size = MediaQuery.sizeOf(context);
     final isDesktop = size.width > 900;
     final user = ref.watch(currentUserProvider);
-    
+
     // ── EMERGENCY BROADCAST CHECK ──
-    _checkEmergency(context);
+    final memoState = ref.watch(memoHubProvider);
+    final dismissedId = ref.watch(_dismissedEmergencyProvider);
+    final emergency = memoState.memos
+        .where((m) => m.priority == 'EMERGENCY' && m.id != dismissedId)
+        .firstOrNull;
+    if (emergency != null) {
+      return _buildEmergencyScreen(emergency);
+    }
 
     final isOnDuty = ref.watch(isOnDutyProvider).value ?? false;
     final navItems = _buildNavItems(user, isOnDuty);
@@ -83,7 +91,9 @@ class _AppShellState extends ConsumerState<AppShell> {
       onPointerDown: (_) => _resetInactivityTimer(),
       onPointerMove: (_) => _resetInactivityTimer(),
       onPointerHover: (_) => _resetInactivityTimer(),
-      child: isDesktop ? _buildDesktopLayout(navItems, user) : _buildMobileLayout(navItems),
+      child: isDesktop
+          ? _buildDesktopLayout(navItems, user)
+          : _buildMobileLayout(navItems),
     );
   }
 
@@ -152,7 +162,6 @@ class _AppShellState extends ConsumerState<AppShell> {
     );
   }
 
-
   Widget _buildMobileLayout(List<_NavItem> navItems) {
     final destItems = navItems.where((i) => !i.isHeader).toList();
     final mobileItems = destItems.take(5).toList();
@@ -192,63 +201,55 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   void _onNav(BuildContext context, String route) => context.go(route);
 
-  Future<void> _checkEmergency(BuildContext context) async {
-    final db = await ref.read(databaseProvider.future);
-    final memos = await db.enterpriseDao.findAllMemos();
-    final emergency = memos.where((m) => m.priority == 'EMERGENCY').firstOrNull;
-    
-    if (emergency != null) {
-      final dismissedId = ref.read(_dismissedEmergencyProvider);
-      if (dismissedId != emergency.id) {
-        // Schedule microtask to avoid building during build
-        Future.microtask(() => _showEmergencyOverride(context, emergency));
-      }
-    }
-  }
-
-  void _showEmergencyOverride(BuildContext context, dynamic memo) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => WillPopScope(
-        onWillPop: () async => false,
-        child: Dialog.fullscreen(
-          backgroundColor: Colors.red,
-          child: Padding(
-            padding: const EdgeInsets.all(40),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.warning_amber_rounded, size: 100, color: Colors.white),
-                const SizedBox(height: 32),
-                const Text('EMERGENCY BROADCAST', 
-                  style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: 2)),
-                const SizedBox(height: 16),
-                const Divider(color: Colors.white54, thickness: 2),
-                const SizedBox(height: 32),
-                Text(memo.title, 
+  Widget _buildEmergencyScreen(dynamic memo) {
+    return Scaffold(
+      backgroundColor: Colors.red,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.warning_amber_rounded,
+                  size: 100, color: Colors.white),
+              const SizedBox(height: 32),
+              const Text('EMERGENCY BROADCAST',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2)),
+              const SizedBox(height: 16),
+              const Divider(color: Colors.white54, thickness: 2),
+              const SizedBox(height: 32),
+              Text(memo.title,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 24),
-                Text(memo.body ?? memo.content, 
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 24),
+              Text(memo.content,
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.white, fontSize: 18)),
-                const Spacer(),
-                FilledButton(
-                  onPressed: () {
-                    ref.read(_dismissedEmergencyProvider.notifier).state = memo.id;
-                    Navigator.pop(context);
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.red,
-                    minimumSize: const Size(double.infinity, 64),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Text('I HAVE READ THIS ALERT', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const Spacer(),
+              FilledButton(
+                onPressed: () {
+                  ref.read(_dismissedEmergencyProvider.notifier).state =
+                      memo.id;
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.red,
+                  minimumSize: const Size(double.infinity, 64),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
-              ],
-            ),
+                child: const Text('I HAVE READ THIS ALERT',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              ),
+            ],
           ),
         ),
       ),
@@ -281,90 +282,153 @@ class _AppShellState extends ConsumerState<AppShell> {
 
     // ── 🔵 OPERATIONAL ENGINES ───────────────────────────────────────────────
     items.add(_NavItem(null, 'OPERATIONAL', '', isHeader: true));
-    
+
     // Academics
     if (level <= AppConstants.roleSeniorTeacher) {
-      items.add(_NavItem(Icons.people_alt_outlined, 'Learners', Routes.students));
+      items.add(
+          _NavItem(Icons.people_alt_outlined, 'Learners', Routes.students));
     }
-    if (level == AppConstants.roleTeacher || level == AppConstants.roleSeniorTeacher) {
-      items.add(_NavItem(Icons.auto_stories_outlined, 'My Teaching', Routes.teacherTimetable));
-      items.add(_NavItem(Icons.edit_calendar_outlined, 'CBC Assessments', Routes.assessment));
-      items.add(_NavItem(Icons.corporate_fare_outlined, 'My Department', Routes.departments));
-      items.add(_NavItem(Icons.how_to_reg_outlined, 'Roll Call', Routes.attendance));
+    if (level == AppConstants.roleTeacher ||
+        level == AppConstants.roleSeniorTeacher) {
+      items.add(_NavItem(
+          Icons.auto_stories_outlined, 'My Teaching', Routes.teacherTimetable));
+      items.add(_NavItem(
+          Icons.edit_calendar_outlined, 'CBC Assessments', Routes.assessment));
+      items.add(_NavItem(
+          Icons.corporate_fare_outlined, 'My Department', Routes.departments));
+      items.add(
+          _NavItem(Icons.how_to_reg_outlined, 'Roll Call', Routes.attendance));
     }
-    
+
     // Coordination
     if (level <= AppConstants.roleDeputy) {
-      items.add(_NavItem(Icons.business_outlined, 'All Departments', Routes.departments));
-      items.add(_NavItem(Icons.compare_arrows_outlined, 'Dept Comparison', Routes.deptComparison));
-      items.add(_NavItem(Icons.grid_on_outlined, 'Timetable Engine', Routes.timetable));
-      items.add(_NavItem(Icons.engineering_outlined, 'Teacher Capacity', Routes.timetableCapacity));
-      items.add(_NavItem(Icons.assignment_outlined, 'Class Demands', Routes.timetableDemand));
+      items.add(_NavItem(
+          Icons.business_outlined, 'All Departments', Routes.departments));
+      items.add(_NavItem(Icons.compare_arrows_outlined, 'Dept Comparison',
+          Routes.deptComparison));
+      items.add(_NavItem(
+          Icons.grid_on_outlined, 'Timetable Engine', Routes.timetable));
+      items.add(_NavItem(Icons.engineering_outlined, 'Teacher Capacity',
+          Routes.timetableCapacity));
+      items.add(_NavItem(
+          Icons.assignment_outlined, 'Class Demands', Routes.timetableDemand));
     }
 
     // Teacher on Duty - Deputy Controls
     if (level <= AppConstants.roleDeputy) {
       items.add(_NavItem(null, 'TEACHER ON DUTY', '', isHeader: true));
-      items.add(    _NavItem(Icons.event_repeat_outlined, 'Duty Roster', Routes.todRoster));
-      items.add(_NavItem(Icons.analytics_outlined, 'Weekly Reports', Routes.todReports));
-      items.add(_NavItem(Icons.warning_amber_outlined, 'Amber Watchlist', Routes.todAmber));
-      items.add(_NavItem(Icons.report_problem_outlined, 'Red Escalation', Routes.todRed));
+      items.add(_NavItem(
+          Icons.event_repeat_outlined, 'Duty Roster', Routes.todRoster));
+      items.add(_NavItem(
+          Icons.analytics_outlined, 'Weekly Reports', Routes.todReports));
+      items.add(_NavItem(
+          Icons.warning_amber_outlined, 'Amber Watchlist', Routes.todAmber));
+      items.add(_NavItem(
+          Icons.report_problem_outlined, 'Red Escalation', Routes.todRed));
     }
 
     // Teacher on Duty - Active Teacher Menu
     if (isOnDuty) {
       items.add(_NavItem(null, 'DUTY PANEL', '', isHeader: true));
-      items.add(_NavItem(Icons.assignment_ind_outlined, 'TOD Records', Routes.todRecords));
-      items.add(_NavItem(Icons.summarize_outlined, 'Submit Daily Report', Routes.todReports));
+      items.add(_NavItem(
+          Icons.assignment_ind_outlined, 'TOD Records', Routes.todRecords));
+      items.add(_NavItem(
+          Icons.summarize_outlined, 'Submit Daily Report', Routes.todReports));
     }
-    
+
     // Finance
-    if (level <= AppConstants.roleHeadteacher || level == AppConstants.roleAccountant || level == AppConstants.roleParent) {
+    if (level <= AppConstants.roleHeadteacher ||
+        level == AppConstants.roleAccountant ||
+        level == AppConstants.roleParent) {
       items.add(_NavItem(null, 'FINANCE', '', isHeader: true));
-      items.add(_NavItem(Icons.account_balance_outlined, 'Dashboard', level == AppConstants.roleParent ? Routes.statement : Routes.finance));
+      items.add(_NavItem(
+          Icons.account_balance_outlined,
+          'Dashboard',
+          level == AppConstants.roleParent
+              ? Routes.statement
+              : Routes.finance));
       if (level != AppConstants.roleParent) {
-        items.add(_NavItem(Icons.receipt_long_outlined, 'Student Billing', Routes.financeBilling));
-        items.add(_NavItem(Icons.account_tree_outlined, 'Fee Structure', Routes.financeStructure));
-        items.add(_NavItem(Icons.payments_outlined, 'Payments & Receipts', Routes.financePayments));
-        items.add(_NavItem(Icons.request_quote_outlined, 'Payroll', Routes.financePayroll));
-        items.add(_NavItem(Icons.credit_score_outlined, 'Staff Loans', Routes.financeLoans));
-        items.add(_NavItem(Icons.trending_down_outlined, 'Expenses', Routes.financeExpenses));
-        items.add(_NavItem(Icons.handyman_outlined, 'Asset & Repairs', Routes.financeAssets));
-        items.add(_NavItem(Icons.room_preferences_outlined, 'Amenities Billing', Routes.financeAmenities));
-        items.add(_NavItem(Icons.bar_chart_outlined, 'Financial Reports', Routes.financeReports));
+        items.add(_NavItem(Icons.receipt_long_outlined, 'Student Billing',
+            Routes.financeBilling));
+        items.add(_NavItem(Icons.account_tree_outlined, 'Fee Structure',
+            Routes.financeStructure));
+        items.add(_NavItem(Icons.payments_outlined, 'Payments & Receipts',
+            Routes.financePayments));
+        items.add(_NavItem(
+            Icons.request_quote_outlined, 'Payroll', Routes.financePayroll));
+        items.add(_NavItem(
+            Icons.credit_score_outlined, 'Staff Loans', Routes.financeLoans));
+        items.add(_NavItem(Icons.shopping_bag_outlined, 'Procurement',
+            Routes.financeProcurement));
+        items.add(_NavItem(
+            Icons.trending_down_outlined, 'Expenses', Routes.financeExpenses));
+        items.add(_NavItem(
+            Icons.handyman_outlined, 'Asset & Repairs', Routes.financeAssets));
+        items.add(_NavItem(Icons.room_preferences_outlined, 'Amenities Billing',
+            Routes.financeAmenities));
+        items.add(_NavItem(Icons.bar_chart_outlined, 'Financial Reports',
+            Routes.financeReports));
+        if (level <= AppConstants.roleHeadteacher) {
+          items.add(_NavItem(
+              Icons.tune_outlined, 'Payroll Settings', Routes.financeSettings));
+        }
       }
     }
 
     // Special Modules
-    if (level == AppConstants.roleNurse) items.add(_NavItem(Icons.medical_services_outlined, 'Health Center', Routes.health));
-    if (level == AppConstants.roleCatering) items.add(_NavItem(Icons.restaurant_outlined, 'Catering', Routes.catering));
-    if (level == AppConstants.roleSecurity) items.add(_NavItem(Icons.security_outlined, 'Security', Routes.security));
-    
-    items.add(_NavItem(Icons.groups_outlined, 'Clubs & Societies', Routes.clubs));
+    if (level == AppConstants.roleNurse)
+      items.add(_NavItem(
+          Icons.medical_services_outlined, 'Health Center', Routes.health));
+    if (level == AppConstants.roleCatering)
+      items.add(
+          _NavItem(Icons.restaurant_outlined, 'Catering', Routes.catering));
+    if (level == AppConstants.roleSecurity)
+      items.add(_NavItem(Icons.security_outlined, 'Security', Routes.security));
+
+    if (level != AppConstants.roleParent && level != AppConstants.roleStudent) {
+      items.add(_NavItem(null, 'STAFF SELF SERVICE', '', isHeader: true));
+      items.add(_NavItem(
+          Icons.credit_card_outlined, 'My Loans', Routes.staffLoanRequest));
+      items.add(
+          _NavItem(Icons.event_available_outlined, 'My Leave', Routes.leave));
+    }
+
+    items.add(
+        _NavItem(Icons.groups_outlined, 'Clubs & Societies', Routes.clubs));
 
     // ── 🟢 CONNECTIVE ENGINES ────────────────────────────────────────────────
     items.add(_NavItem(null, 'CONNECTIVE', '', isHeader: true));
-    items.add(_NavItem(Icons.forum_outlined, 'Messaging Hub', Routes.messaging));
-    
+    items
+        .add(_NavItem(Icons.forum_outlined, 'Messaging Hub', Routes.messaging));
+
     if (level <= AppConstants.roleHeadteacher) {
-      items.add(_NavItem(Icons.insights_outlined, 'Executive Analytics', Routes.analytics));
+      items.add(_NavItem(
+          Icons.insights_outlined, 'Executive Analytics', Routes.analytics));
     }
-    
+
     if (user.hasFlag(AppConstants.flagHOD)) {
-      items.add(_NavItem(Icons.fact_check_outlined, 'HOD Moderation', Routes.moderation));
+      items.add(_NavItem(
+          Icons.fact_check_outlined, 'HOD Moderation', Routes.moderation));
     }
 
     // ── 🟣 INFRASTRUCTURE ────────────────────────────────────────────────────
     items.add(_NavItem(null, 'INFRASTRUCTURE', '', isHeader: true));
-    
+
     if (level <= AppConstants.roleHeadteacher) {
-      items.add(_NavItem(Icons.manage_accounts_outlined, 'Faculty & RBAC', Routes.staff));
-      items.add(_NavItem(Icons.assignment_turned_in_outlined, 'Admissions', Routes.admissions));
+      items.add(_NavItem(
+          Icons.manage_accounts_outlined, 'Faculty & RBAC', Routes.staff));
+      items.add(_NavItem(Icons.assignment_turned_in_outlined, 'Admissions',
+          Routes.admissions));
       items.add(_NavItem(Icons.policy_outlined, 'Audit Logs', Routes.audit));
     }
 
-    items.add(_NavItem(Icons.inventory_2_outlined, 'Asset Inventory', Routes.inventory));
-    items.add(_NavItem(Icons.event_note_outlined, 'Leave Manager', Routes.leave));
+    items.add(_NavItem(
+        Icons.inventory_2_outlined, 'Asset Inventory', Routes.inventory));
+    if (level <= AppConstants.roleHeadteacher ||
+        user.hasFlag(AppConstants.flagHOD)) {
+      items.add(
+          _NavItem(Icons.event_note_outlined, 'Leave Manager', Routes.leave));
+    }
 
     return items;
   }
@@ -393,7 +457,10 @@ class _DrawerHeader extends StatelessWidget {
             radius: 24,
             child: Text(
               (user?.name as String? ?? 'U').substring(0, 1).toUpperCase(),
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18),
             ),
           ),
           const SizedBox(width: 12),

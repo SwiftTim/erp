@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
-
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
-import '../../data/local/app_database.dart';
 import '../../data/models/user_model.dart';
 import '../../data/models/curriculum_models.dart';
 import '../../data/models/timetable_models.dart';

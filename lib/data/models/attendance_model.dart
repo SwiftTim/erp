@@ -89,7 +89,6 @@ class MessageModel {
         'messageType': messageType,
         'subject': subject,
         'body': body,
-        'body': body,
         'sentAt': sentAt,
         'readAt': readAt,
       };

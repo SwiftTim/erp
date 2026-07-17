@@ -2,9 +2,7 @@
 
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/local/app_database.dart';
 import '../../data/models/department_model.dart';
-import '../../data/models/user_model.dart';
 import '../../core/constants/app_constants.dart';
 import '../../features/auth/auth_provider.dart';
 import 'dept_config.dart';

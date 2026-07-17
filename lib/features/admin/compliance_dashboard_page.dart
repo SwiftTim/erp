@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/services/compliance_service.dart';
 import '../../data/models/student_model.dart';
@@ -55,7 +54,7 @@ class _ComplianceDashboardPageState extends ConsumerState<ComplianceDashboardPag
   }
 
   Future<void> _exportKnec() async {
-    final csv = await ref.read(complianceServiceProvider).generateKnecExport(['Grade 6', 'Grade 9']);
+    await ref.read(complianceServiceProvider).generateKnecExport(['Grade 6', 'Grade 9']);
     // In real app, write to file or share. Here we show success.
     if (mounted) {
       showDialog(

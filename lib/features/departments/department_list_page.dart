@@ -15,7 +15,6 @@ class DepartmentListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
-    final service = ref.watch(departmentServiceProvider);
 
     return AppShell(
       title: 'School Departments',
