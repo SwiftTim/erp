@@ -22,6 +22,13 @@ class AppConstants {
   static const int roleSecurity = 10;
   static const int roleParent = 11;
   static const int roleStudent = 12;
+  // ── New operations actor roles ─────────────────────────────────────────────
+  static const int roleReceptionist  = 13;
+  static const int roleBoardingMaster = 14;
+  static const int roleLibrarian     = 15;
+  static const int roleFleetManager  = 16;
+  static const int roleHR            = 17;
+  static const int roleStoreKeeper   = 18;
 
   static const Map<int, String> roleNames = {
     1: 'Director / Proprietor',
@@ -36,6 +43,12 @@ class AppConstants {
     10: 'Security Officer',
     11: 'Parent / Guardian',
     12: 'Student',
+    13: 'Receptionist',
+    14: 'Boarding Master',
+    15: 'Librarian',
+    16: 'Fleet Manager',
+    17: 'HR Officer',
+    18: 'Store Keeper',
   };
 
   // ── Specialty Role Flags (For Teachers/Staff) ──────────────────────────────

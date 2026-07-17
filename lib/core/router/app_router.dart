@@ -70,6 +70,16 @@ import '../../features/finance/payments_receipts_page.dart';
 import '../../features/finance/finance_reports_page.dart';
 import '../../features/finance/finance_settings_page.dart';
 import '../../core/constants/app_constants.dart';
+// ── New Operations Modules ───────────────────────────────────────────────────
+import '../../features/leave_out/leave_out_page.dart';
+import '../../features/store/store_dashboard_page.dart';
+import '../../features/library/library_dashboard_page.dart';
+import '../../features/fleet/fleet_dashboard_page.dart';
+import '../../features/trips/trips_dashboard_page.dart';
+import '../../features/casual_staff/casual_staff_page.dart';
+import '../../features/reception/reception_dashboard_page.dart';
+import '../../features/boarding/boarding_dashboard_page.dart';
+import '../../features/hr/hr_dashboard_page.dart';
 
 // ── Route Names ────────────────────────────────────────────────────────────────
 class Routes {
@@ -140,6 +150,17 @@ class Routes {
   static const todAmber = '/tod/amber';
   static const todRed = '/tod/red';
   static const todReports = '/tod/reports';
+
+  // ── New Operations Modules ───────────────────────────────────────────────
+  static const leaveOut    = '/operations/leave-out';
+  static const store       = '/operations/store';
+  static const library     = '/operations/library';
+  static const fleet       = '/operations/fleet';
+  static const trips       = '/operations/trips';
+  static const casualStaff = '/operations/casual-staff';
+  static const reception   = '/operations/reception';
+  static const boarding    = '/operations/boarding';
+  static const hr          = '/operations/hr';
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -216,6 +237,18 @@ final routerProvider = Provider<GoRouter>((ref) {
               return const CateringDashboardPage();
             case AppConstants.roleSecurity:
               return const VisitorDashboardPage();
+            case AppConstants.roleReceptionist:
+              return const ReceptionDashboardPage();
+            case AppConstants.roleBoardingMaster:
+              return const BoardingDashboardPage();
+            case AppConstants.roleLibrarian:
+              return const LibraryDashboardPage();
+            case AppConstants.roleFleetManager:
+              return const FleetDashboardPage();
+            case AppConstants.roleHR:
+              return const HrDashboardPage();
+            case AppConstants.roleStoreKeeper:
+              return const StoreDashboardPage();
             default:
               return const LoginPage();
           }
@@ -488,6 +521,43 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.teacherProcurementRequest,
         builder: (_, __) => const AppShell(
             title: 'Resource Requests', body: TeacherRequestsPage()),
+      ),
+      // ── New Operations Modules ────────────────────────────────────────────
+      GoRoute(
+        path: Routes.leaveOut,
+        builder: (_, __) => const AppShell(title: 'Student Leave-Out', body: LeaveOutPage()),
+      ),
+      GoRoute(
+        path: Routes.store,
+        builder: (_, __) => const StoreDashboardPage(),
+      ),
+      GoRoute(
+        path: Routes.library,
+        builder: (_, __) => const LibraryDashboardPage(),
+      ),
+      GoRoute(
+        path: Routes.fleet,
+        builder: (_, __) => const FleetDashboardPage(),
+      ),
+      GoRoute(
+        path: Routes.trips,
+        builder: (_, __) => const TripsDashboardPage(),
+      ),
+      GoRoute(
+        path: Routes.casualStaff,
+        builder: (_, __) => const CasualStaffPage(),
+      ),
+      GoRoute(
+        path: Routes.reception,
+        builder: (_, __) => const ReceptionDashboardPage(),
+      ),
+      GoRoute(
+        path: Routes.boarding,
+        builder: (_, __) => const BoardingDashboardPage(),
+      ),
+      GoRoute(
+        path: Routes.hr,
+        builder: (_, __) => const HrDashboardPage(),
       ),
     ],
     errorBuilder: (_, state) => Scaffold(

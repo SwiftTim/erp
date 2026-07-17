@@ -118,13 +118,15 @@ class _$AppDatabase extends AppDatabase {
 
   FinanceErpDao? _financeErpDaoInstance;
 
+  OperationsDao? _operationsDaoInstance;
+
   Future<sqflite.Database> open(
     String path,
     List<Migration> migrations, [
     Callback? callback,
   ]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 16,
+      version: 17,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
         await callback?.onConfigure?.call(database);
@@ -298,6 +300,84 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `payroll_entries` (`payroll_entry_id` TEXT NOT NULL, `month` TEXT NOT NULL, `structure_id` TEXT NOT NULL, `status` TEXT NOT NULL, `posting_date` INTEGER NOT NULL, `count_processed` INTEGER NOT NULL, PRIMARY KEY (`payroll_entry_id`))');
         await database.execute(
+            'CREATE TABLE IF NOT EXISTS `leave_out_requests` (`id` TEXT NOT NULL, `student_id` TEXT NOT NULL, `student_name` TEXT NOT NULL, `reason` TEXT NOT NULL, `reason_notes` TEXT NOT NULL, `requested_by` TEXT NOT NULL, `severity` TEXT NOT NULL, `status` TEXT NOT NULL, `created_by` TEXT NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `leave_out_events` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `leave_out_id` TEXT NOT NULL, `event_type` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `recorded_by` TEXT NOT NULL)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `gate_logs` (`id` TEXT NOT NULL, `type` TEXT NOT NULL, `reg_number` TEXT, `contact` TEXT NOT NULL, `reason` TEXT NOT NULL, `student_id` TEXT, `destination_dept` TEXT, `entry_ts` INTEGER NOT NULL, `exit_ts` INTEGER, `recorded_by` TEXT NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `visiting_schools` (`id` TEXT NOT NULL, `school_name` TEXT NOT NULL, `teacher_name` TEXT NOT NULL, `student_count` INTEGER NOT NULL, `reason` TEXT NOT NULL, `entry_ts` INTEGER NOT NULL, `exit_ts` INTEGER, `recorded_by` TEXT NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `security_incidents` (`id` TEXT NOT NULL, `shift` TEXT NOT NULL, `description` TEXT NOT NULL, `photo_url` TEXT, `flagged_indiscipline` INTEGER NOT NULL, `escalated_to` TEXT, `created_at` INTEGER NOT NULL, `created_by` TEXT NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `camera_feeds` (`id` TEXT NOT NULL, `label` TEXT NOT NULL, `ip_address` TEXT NOT NULL, `access_key_hash` TEXT NOT NULL, `zone` TEXT NOT NULL, `issued_by` TEXT NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `duty_assignments` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `guard_id` TEXT NOT NULL, `guard_name` TEXT NOT NULL, `role` TEXT NOT NULL, `shift_date` INTEGER NOT NULL)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `store_assets` (`id` TEXT NOT NULL, `category` TEXT NOT NULL, `name` TEXT NOT NULL, `tag_number` TEXT NOT NULL, `condition` TEXT NOT NULL, `status` TEXT NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `asset_assignments` (`id` TEXT NOT NULL, `asset_id` TEXT NOT NULL, `assigned_to_type` TEXT NOT NULL, `assigned_to_id` TEXT NOT NULL, `assign_condition` TEXT NOT NULL, `return_condition` TEXT, `assigned_at` INTEGER NOT NULL, `returned_at` INTEGER, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `stock_items` (`id` TEXT NOT NULL, `category` TEXT NOT NULL, `name` TEXT NOT NULL, `unit` TEXT NOT NULL, `quantity_on_hand` INTEGER NOT NULL, `reorder_level` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `procurement_requests` (`id` TEXT NOT NULL, `source_module` TEXT NOT NULL, `item` TEXT NOT NULL, `qty` INTEGER NOT NULL, `estimated_cost` REAL NOT NULL, `justification` TEXT NOT NULL, `requested_by` TEXT NOT NULL, `status` TEXT NOT NULL, `approval_log` TEXT, `created_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `library_books` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `author` TEXT NOT NULL, `isbn` TEXT NOT NULL, `category` TEXT NOT NULL, `total_copies` INTEGER NOT NULL, `available_copies` INTEGER NOT NULL, `shelf_location` TEXT NOT NULL, `version` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `library_loans` (`id` TEXT NOT NULL, `book_id` TEXT NOT NULL, `borrower_id` TEXT NOT NULL, `borrower_name` TEXT NOT NULL, `borrower_type` TEXT NOT NULL, `borrowed_at` INTEGER NOT NULL, `due_at` INTEGER NOT NULL, `returned_at` INTEGER, `fine_amount` REAL NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `library_members` (`id` TEXT NOT NULL, `person_id` TEXT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `borrow_limit` INTEGER NOT NULL, `is_active` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `fleet_vehicles` (`id` TEXT NOT NULL, `plate_number` TEXT NOT NULL, `seats` INTEGER NOT NULL, `driver_id` TEXT NOT NULL, `driver_name` TEXT NOT NULL, `consumption_rate` REAL NOT NULL, `tank_capacity` REAL NOT NULL, `odometer_km` REAL NOT NULL, `fuel_level` REAL NOT NULL, `status` TEXT NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `transport_enrollments` (`id` TEXT NOT NULL, `student_id` TEXT NOT NULL, `student_name` TEXT NOT NULL, `guardian_contact` TEXT NOT NULL, `pickup_location` TEXT NOT NULL, `van_id` TEXT NOT NULL, `active` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `transport_events` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `student_id` TEXT NOT NULL, `van_id` TEXT NOT NULL, `event_type` TEXT NOT NULL, `timestamp` INTEGER NOT NULL)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `vehicle_maintenance_logs` (`id` TEXT NOT NULL, `vehicle_id` TEXT NOT NULL, `type` TEXT NOT NULL, `date` INTEGER NOT NULL, `cost` REAL NOT NULL, `notes` TEXT NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `fleet_incidents` (`id` TEXT NOT NULL, `van_id` TEXT NOT NULL, `description` TEXT NOT NULL, `reported_at` INTEGER NOT NULL, `reported_by` TEXT NOT NULL, `notified_fleet_manager` INTEGER NOT NULL, `notified_receptionist` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `school_trips` (`id` TEXT NOT NULL, `teacher_id` TEXT NOT NULL, `teacher_name` TEXT NOT NULL, `class_id` TEXT NOT NULL, `venue` TEXT NOT NULL, `purpose` TEXT NOT NULL, `student_ids` TEXT NOT NULL, `status` TEXT NOT NULL, `deputy_approved_by` TEXT, `amount` REAL NOT NULL, `headteacher_signature` TEXT, `fleet_alloc_ref` TEXT, `created_at` INTEGER NOT NULL, `trip_date` INTEGER, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `casual_workers` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `national_id` TEXT NOT NULL, `job_description` TEXT NOT NULL, `agreed_rate_per_day` REAL NOT NULL, `registered_by` TEXT NOT NULL, `start_date` INTEGER NOT NULL, `end_date` INTEGER, `active` INTEGER NOT NULL, `blacklisted` INTEGER NOT NULL, `blacklist_reason` TEXT, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `casual_attendance` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `worker_id` TEXT NOT NULL, `in_ts` INTEGER NOT NULL, `out_ts` INTEGER, `recorded_by` TEXT NOT NULL)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `visitor_queue` (`id` TEXT NOT NULL, `visitor_name` TEXT NOT NULL, `contact` TEXT NOT NULL, `purpose` TEXT NOT NULL, `person_to_see` TEXT, `arrived_at` INTEGER NOT NULL, `attended_at` INTEGER, `status` TEXT NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `bulk_message_jobs` (`id` TEXT NOT NULL, `source_module` TEXT NOT NULL, `message_template` TEXT NOT NULL, `recipient_list` TEXT NOT NULL, `sent_at` INTEGER, `status` TEXT NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `appointments` (`id` TEXT NOT NULL, `requested_with` TEXT NOT NULL, `requester_name` TEXT NOT NULL, `requester_contact` TEXT NOT NULL, `purpose` TEXT NOT NULL, `datetime` INTEGER NOT NULL, `status` TEXT NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `dorm_blocks` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `floor_count` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `dorm_rooms` (`id` TEXT NOT NULL, `block_id` TEXT NOT NULL, `room_number` TEXT NOT NULL, `floor` INTEGER NOT NULL, `length_m` REAL NOT NULL, `width_m` REAL NOT NULL, `bed_count` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `bed_slots` (`id` TEXT NOT NULL, `room_id` TEXT NOT NULL, `bunk_position` TEXT NOT NULL, `student_id` TEXT, `student_name` TEXT, `student_class` TEXT, `reg_number` TEXT, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `dorm_facilities` (`id` TEXT NOT NULL, `room_or_block_id` TEXT NOT NULL, `type` TEXT NOT NULL, `last_serviced` INTEGER NOT NULL, `next_due` INTEGER NOT NULL, `status` TEXT NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `inspection_reports` (`id` TEXT NOT NULL, `area_type` TEXT NOT NULL, `condition_notes` TEXT NOT NULL, `submitted_by` TEXT NOT NULL, `submitted_at` INTEGER NOT NULL, `severity` TEXT NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `dining_tables` (`id` TEXT NOT NULL, `table_number` INTEGER NOT NULL, `grade_level` TEXT NOT NULL, `student_ids` TEXT NOT NULL, `leader_ids` TEXT NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `boarding_staff` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `staff_id` TEXT NOT NULL, `staff_name` TEXT NOT NULL, `role` TEXT NOT NULL, `duties` TEXT NOT NULL)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `job_vacancies` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `grade` TEXT NOT NULL, `department` TEXT NOT NULL, `status` TEXT NOT NULL, `budget_ref` TEXT, `created_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `staff_documents` (`id` TEXT NOT NULL, `staff_id` TEXT NOT NULL, `doc_type` TEXT NOT NULL, `file_url` TEXT NOT NULL, `file_name` TEXT NOT NULL, `uploaded_at` INTEGER NOT NULL, `uploaded_by` TEXT NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `staff_statutory` (`staff_id` TEXT NOT NULL, `nssf_number` TEXT, `sha_number` TEXT, `tsc_number` TEXT, `national_id` TEXT, `email` TEXT, PRIMARY KEY (`staff_id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `workforce_incidents` (`id` TEXT NOT NULL, `staff_id` TEXT NOT NULL, `staff_name` TEXT NOT NULL, `type` TEXT NOT NULL, `description` TEXT NOT NULL, `reported_by` TEXT NOT NULL, `action_taken` TEXT, `status` TEXT NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `welfare_funds` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `balance` REAL NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `welfare_contributions` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `fund_id` TEXT NOT NULL, `staff_id` TEXT NOT NULL, `staff_name` TEXT NOT NULL, `amount` REAL NOT NULL, `type` TEXT NOT NULL, `date` INTEGER NOT NULL)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `teacher_quarters` (`id` TEXT NOT NULL, `staff_id` TEXT NOT NULL, `staff_name` TEXT NOT NULL, `quarter_unit` TEXT NOT NULL, `assigned_date` INTEGER NOT NULL, `active` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+        await database.execute(
             'CREATE UNIQUE INDEX `index_teacher_subject_capabilities_teacher_id_subject_id` ON `teacher_subject_capabilities` (`teacher_id`, `subject_id`)');
         await database.execute(
             'CREATE UNIQUE INDEX `index_class_subject_requirements_class_id_subject_id` ON `class_subject_requirements` (`class_id`, `subject_id`)');
@@ -429,6 +509,11 @@ class _$AppDatabase extends AppDatabase {
   @override
   FinanceErpDao get financeErpDao {
     return _financeErpDaoInstance ??= _$FinanceErpDao(database, changeListener);
+  }
+
+  @override
+  OperationsDao get operationsDao {
+    return _operationsDaoInstance ??= _$OperationsDao(database, changeListener);
   }
 }
 
@@ -6009,5 +6094,2013 @@ class _$FinanceErpDao extends FinanceErpDao {
   Future<void> insertPayrollEntry(PayrollEntry entry) async {
     await _payrollEntryInsertionAdapter.insert(
         entry, OnConflictStrategy.replace);
+  }
+}
+
+class _$OperationsDao extends OperationsDao {
+  _$OperationsDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
+        _leaveOutRequestInsertionAdapter = InsertionAdapter(
+            database,
+            'leave_out_requests',
+            (LeaveOutRequest item) => <String, Object?>{
+                  'id': item.id,
+                  'student_id': item.student_id,
+                  'student_name': item.student_name,
+                  'reason': item.reason,
+                  'reason_notes': item.reason_notes,
+                  'requested_by': item.requested_by,
+                  'severity': item.severity,
+                  'status': item.status,
+                  'created_by': item.created_by,
+                  'created_at': item.created_at
+                }),
+        _leaveOutEventInsertionAdapter = InsertionAdapter(
+            database,
+            'leave_out_events',
+            (LeaveOutEvent item) => <String, Object?>{
+                  'id': item.id,
+                  'leave_out_id': item.leave_out_id,
+                  'event_type': item.event_type,
+                  'timestamp': item.timestamp,
+                  'recorded_by': item.recorded_by
+                }),
+        _gateLogInsertionAdapter = InsertionAdapter(
+            database,
+            'gate_logs',
+            (GateLog item) => <String, Object?>{
+                  'id': item.id,
+                  'type': item.type,
+                  'reg_number': item.reg_number,
+                  'contact': item.contact,
+                  'reason': item.reason,
+                  'student_id': item.student_id,
+                  'destination_dept': item.destination_dept,
+                  'entry_ts': item.entry_ts,
+                  'exit_ts': item.exit_ts,
+                  'recorded_by': item.recorded_by
+                }),
+        _visitingSchoolInsertionAdapter = InsertionAdapter(
+            database,
+            'visiting_schools',
+            (VisitingSchool item) => <String, Object?>{
+                  'id': item.id,
+                  'school_name': item.school_name,
+                  'teacher_name': item.teacher_name,
+                  'student_count': item.student_count,
+                  'reason': item.reason,
+                  'entry_ts': item.entry_ts,
+                  'exit_ts': item.exit_ts,
+                  'recorded_by': item.recorded_by
+                }),
+        _securityIncidentInsertionAdapter = InsertionAdapter(
+            database,
+            'security_incidents',
+            (SecurityIncident item) => <String, Object?>{
+                  'id': item.id,
+                  'shift': item.shift,
+                  'description': item.description,
+                  'photo_url': item.photo_url,
+                  'flagged_indiscipline': item.flagged_indiscipline ? 1 : 0,
+                  'escalated_to': item.escalated_to,
+                  'created_at': item.created_at,
+                  'created_by': item.created_by
+                }),
+        _cameraFeedInsertionAdapter = InsertionAdapter(
+            database,
+            'camera_feeds',
+            (CameraFeed item) => <String, Object?>{
+                  'id': item.id,
+                  'label': item.label,
+                  'ip_address': item.ip_address,
+                  'access_key_hash': item.access_key_hash,
+                  'zone': item.zone,
+                  'issued_by': item.issued_by
+                }),
+        _dutyAssignmentInsertionAdapter = InsertionAdapter(
+            database,
+            'duty_assignments',
+            (DutyAssignment item) => <String, Object?>{
+                  'id': item.id,
+                  'guard_id': item.guard_id,
+                  'guard_name': item.guard_name,
+                  'role': item.role,
+                  'shift_date': item.shift_date
+                }),
+        _storeAssetInsertionAdapter = InsertionAdapter(
+            database,
+            'store_assets',
+            (StoreAsset item) => <String, Object?>{
+                  'id': item.id,
+                  'category': item.category,
+                  'name': item.name,
+                  'tag_number': item.tag_number,
+                  'condition': item.condition,
+                  'status': item.status,
+                  'created_at': item.created_at
+                }),
+        _assetAssignmentInsertionAdapter = InsertionAdapter(
+            database,
+            'asset_assignments',
+            (AssetAssignment item) => <String, Object?>{
+                  'id': item.id,
+                  'asset_id': item.asset_id,
+                  'assigned_to_type': item.assigned_to_type,
+                  'assigned_to_id': item.assigned_to_id,
+                  'assign_condition': item.assign_condition,
+                  'return_condition': item.return_condition,
+                  'assigned_at': item.assigned_at,
+                  'returned_at': item.returned_at
+                }),
+        _stockItemInsertionAdapter = InsertionAdapter(
+            database,
+            'stock_items',
+            (StockItem item) => <String, Object?>{
+                  'id': item.id,
+                  'category': item.category,
+                  'name': item.name,
+                  'unit': item.unit,
+                  'quantity_on_hand': item.quantity_on_hand,
+                  'reorder_level': item.reorder_level
+                }),
+        _procurementRequestInsertionAdapter = InsertionAdapter(
+            database,
+            'procurement_requests',
+            (ProcurementRequest item) => <String, Object?>{
+                  'id': item.id,
+                  'source_module': item.source_module,
+                  'item': item.item,
+                  'qty': item.qty,
+                  'estimated_cost': item.estimated_cost,
+                  'justification': item.justification,
+                  'requested_by': item.requested_by,
+                  'status': item.status,
+                  'approval_log': item.approval_log,
+                  'created_at': item.created_at
+                }),
+        _libraryBookInsertionAdapter = InsertionAdapter(
+            database,
+            'library_books',
+            (LibraryBook item) => <String, Object?>{
+                  'id': item.id,
+                  'title': item.title,
+                  'author': item.author,
+                  'isbn': item.isbn,
+                  'category': item.category,
+                  'total_copies': item.total_copies,
+                  'available_copies': item.available_copies,
+                  'shelf_location': item.shelf_location,
+                  'version': item.version
+                }),
+        _libraryLoanInsertionAdapter = InsertionAdapter(
+            database,
+            'library_loans',
+            (LibraryLoan item) => <String, Object?>{
+                  'id': item.id,
+                  'book_id': item.book_id,
+                  'borrower_id': item.borrower_id,
+                  'borrower_name': item.borrower_name,
+                  'borrower_type': item.borrower_type,
+                  'borrowed_at': item.borrowed_at,
+                  'due_at': item.due_at,
+                  'returned_at': item.returned_at,
+                  'fine_amount': item.fine_amount
+                }),
+        _libraryMemberInsertionAdapter = InsertionAdapter(
+            database,
+            'library_members',
+            (LibraryMember item) => <String, Object?>{
+                  'id': item.id,
+                  'person_id': item.person_id,
+                  'name': item.name,
+                  'type': item.type,
+                  'borrow_limit': item.borrow_limit,
+                  'is_active': item.is_active ? 1 : 0
+                }),
+        _fleetVehicleInsertionAdapter = InsertionAdapter(
+            database,
+            'fleet_vehicles',
+            (FleetVehicle item) => <String, Object?>{
+                  'id': item.id,
+                  'plate_number': item.plate_number,
+                  'seats': item.seats,
+                  'driver_id': item.driver_id,
+                  'driver_name': item.driver_name,
+                  'consumption_rate': item.consumption_rate,
+                  'tank_capacity': item.tank_capacity,
+                  'odometer_km': item.odometer_km,
+                  'fuel_level': item.fuel_level,
+                  'status': item.status
+                }),
+        _transportEnrollmentInsertionAdapter = InsertionAdapter(
+            database,
+            'transport_enrollments',
+            (TransportEnrollment item) => <String, Object?>{
+                  'id': item.id,
+                  'student_id': item.student_id,
+                  'student_name': item.student_name,
+                  'guardian_contact': item.guardian_contact,
+                  'pickup_location': item.pickup_location,
+                  'van_id': item.van_id,
+                  'active': item.active ? 1 : 0
+                }),
+        _transportEventInsertionAdapter = InsertionAdapter(
+            database,
+            'transport_events',
+            (TransportEvent item) => <String, Object?>{
+                  'id': item.id,
+                  'student_id': item.student_id,
+                  'van_id': item.van_id,
+                  'event_type': item.event_type,
+                  'timestamp': item.timestamp
+                }),
+        _vehicleMaintenanceLogInsertionAdapter = InsertionAdapter(
+            database,
+            'vehicle_maintenance_logs',
+            (VehicleMaintenanceLog item) => <String, Object?>{
+                  'id': item.id,
+                  'vehicle_id': item.vehicle_id,
+                  'type': item.type,
+                  'date': item.date,
+                  'cost': item.cost,
+                  'notes': item.notes
+                }),
+        _fleetIncidentInsertionAdapter = InsertionAdapter(
+            database,
+            'fleet_incidents',
+            (FleetIncident item) => <String, Object?>{
+                  'id': item.id,
+                  'van_id': item.van_id,
+                  'description': item.description,
+                  'reported_at': item.reported_at,
+                  'reported_by': item.reported_by,
+                  'notified_fleet_manager': item.notified_fleet_manager ? 1 : 0,
+                  'notified_receptionist': item.notified_receptionist ? 1 : 0
+                }),
+        _schoolTripInsertionAdapter = InsertionAdapter(
+            database,
+            'school_trips',
+            (SchoolTrip item) => <String, Object?>{
+                  'id': item.id,
+                  'teacher_id': item.teacher_id,
+                  'teacher_name': item.teacher_name,
+                  'class_id': item.class_id,
+                  'venue': item.venue,
+                  'purpose': item.purpose,
+                  'student_ids': item.student_ids,
+                  'status': item.status,
+                  'deputy_approved_by': item.deputy_approved_by,
+                  'amount': item.amount,
+                  'headteacher_signature': item.headteacher_signature,
+                  'fleet_alloc_ref': item.fleet_alloc_ref,
+                  'created_at': item.created_at,
+                  'trip_date': item.trip_date
+                }),
+        _casualWorkerInsertionAdapter = InsertionAdapter(
+            database,
+            'casual_workers',
+            (CasualWorker item) => <String, Object?>{
+                  'id': item.id,
+                  'name': item.name,
+                  'national_id': item.national_id,
+                  'job_description': item.job_description,
+                  'agreed_rate_per_day': item.agreed_rate_per_day,
+                  'registered_by': item.registered_by,
+                  'start_date': item.start_date,
+                  'end_date': item.end_date,
+                  'active': item.active ? 1 : 0,
+                  'blacklisted': item.blacklisted ? 1 : 0,
+                  'blacklist_reason': item.blacklist_reason
+                }),
+        _casualAttendanceInsertionAdapter = InsertionAdapter(
+            database,
+            'casual_attendance',
+            (CasualAttendance item) => <String, Object?>{
+                  'id': item.id,
+                  'worker_id': item.worker_id,
+                  'in_ts': item.in_ts,
+                  'out_ts': item.out_ts,
+                  'recorded_by': item.recorded_by
+                }),
+        _visitorQueueEntryInsertionAdapter = InsertionAdapter(
+            database,
+            'visitor_queue',
+            (VisitorQueueEntry item) => <String, Object?>{
+                  'id': item.id,
+                  'visitor_name': item.visitor_name,
+                  'contact': item.contact,
+                  'purpose': item.purpose,
+                  'person_to_see': item.person_to_see,
+                  'arrived_at': item.arrived_at,
+                  'attended_at': item.attended_at,
+                  'status': item.status
+                }),
+        _bulkMessageJobInsertionAdapter = InsertionAdapter(
+            database,
+            'bulk_message_jobs',
+            (BulkMessageJob item) => <String, Object?>{
+                  'id': item.id,
+                  'source_module': item.source_module,
+                  'message_template': item.message_template,
+                  'recipient_list': item.recipient_list,
+                  'sent_at': item.sent_at,
+                  'status': item.status
+                }),
+        _appointmentInsertionAdapter = InsertionAdapter(
+            database,
+            'appointments',
+            (Appointment item) => <String, Object?>{
+                  'id': item.id,
+                  'requested_with': item.requested_with,
+                  'requester_name': item.requester_name,
+                  'requester_contact': item.requester_contact,
+                  'purpose': item.purpose,
+                  'datetime': item.datetime,
+                  'status': item.status
+                }),
+        _dormBlockInsertionAdapter = InsertionAdapter(
+            database,
+            'dorm_blocks',
+            (DormBlock item) => <String, Object?>{
+                  'id': item.id,
+                  'name': item.name,
+                  'type': item.type,
+                  'floor_count': item.floor_count
+                }),
+        _dormRoomInsertionAdapter = InsertionAdapter(
+            database,
+            'dorm_rooms',
+            (DormRoom item) => <String, Object?>{
+                  'id': item.id,
+                  'block_id': item.block_id,
+                  'room_number': item.room_number,
+                  'floor': item.floor,
+                  'length_m': item.length_m,
+                  'width_m': item.width_m,
+                  'bed_count': item.bed_count
+                }),
+        _bedSlotInsertionAdapter = InsertionAdapter(
+            database,
+            'bed_slots',
+            (BedSlot item) => <String, Object?>{
+                  'id': item.id,
+                  'room_id': item.room_id,
+                  'bunk_position': item.bunk_position,
+                  'student_id': item.student_id,
+                  'student_name': item.student_name,
+                  'student_class': item.student_class,
+                  'reg_number': item.reg_number
+                }),
+        _dormFacilityInsertionAdapter = InsertionAdapter(
+            database,
+            'dorm_facilities',
+            (DormFacility item) => <String, Object?>{
+                  'id': item.id,
+                  'room_or_block_id': item.room_or_block_id,
+                  'type': item.type,
+                  'last_serviced': item.last_serviced,
+                  'next_due': item.next_due,
+                  'status': item.status
+                }),
+        _inspectionReportInsertionAdapter = InsertionAdapter(
+            database,
+            'inspection_reports',
+            (InspectionReport item) => <String, Object?>{
+                  'id': item.id,
+                  'area_type': item.area_type,
+                  'condition_notes': item.condition_notes,
+                  'submitted_by': item.submitted_by,
+                  'submitted_at': item.submitted_at,
+                  'severity': item.severity
+                }),
+        _diningTableInsertionAdapter = InsertionAdapter(
+            database,
+            'dining_tables',
+            (DiningTable item) => <String, Object?>{
+                  'id': item.id,
+                  'table_number': item.table_number,
+                  'grade_level': item.grade_level,
+                  'student_ids': item.student_ids,
+                  'leader_ids': item.leader_ids
+                }),
+        _boardingStaffAssignmentInsertionAdapter = InsertionAdapter(
+            database,
+            'boarding_staff',
+            (BoardingStaffAssignment item) => <String, Object?>{
+                  'id': item.id,
+                  'staff_id': item.staff_id,
+                  'staff_name': item.staff_name,
+                  'role': item.role,
+                  'duties': item.duties
+                }),
+        _jobVacancyInsertionAdapter = InsertionAdapter(
+            database,
+            'job_vacancies',
+            (JobVacancy item) => <String, Object?>{
+                  'id': item.id,
+                  'title': item.title,
+                  'grade': item.grade,
+                  'department': item.department,
+                  'status': item.status,
+                  'budget_ref': item.budget_ref,
+                  'created_at': item.created_at
+                }),
+        _staffDocumentInsertionAdapter = InsertionAdapter(
+            database,
+            'staff_documents',
+            (StaffDocument item) => <String, Object?>{
+                  'id': item.id,
+                  'staff_id': item.staff_id,
+                  'doc_type': item.doc_type,
+                  'file_url': item.file_url,
+                  'file_name': item.file_name,
+                  'uploaded_at': item.uploaded_at,
+                  'uploaded_by': item.uploaded_by
+                }),
+        _staffStatutoryInsertionAdapter = InsertionAdapter(
+            database,
+            'staff_statutory',
+            (StaffStatutory item) => <String, Object?>{
+                  'staff_id': item.staff_id,
+                  'nssf_number': item.nssf_number,
+                  'sha_number': item.sha_number,
+                  'tsc_number': item.tsc_number,
+                  'national_id': item.national_id,
+                  'email': item.email
+                }),
+        _workforceIncidentInsertionAdapter = InsertionAdapter(
+            database,
+            'workforce_incidents',
+            (WorkforceIncident item) => <String, Object?>{
+                  'id': item.id,
+                  'staff_id': item.staff_id,
+                  'staff_name': item.staff_name,
+                  'type': item.type,
+                  'description': item.description,
+                  'reported_by': item.reported_by,
+                  'action_taken': item.action_taken,
+                  'status': item.status,
+                  'created_at': item.created_at
+                }),
+        _welfareFundInsertionAdapter = InsertionAdapter(
+            database,
+            'welfare_funds',
+            (WelfareFund item) => <String, Object?>{
+                  'id': item.id,
+                  'name': item.name,
+                  'balance': item.balance,
+                  'created_at': item.created_at
+                }),
+        _welfareContributionInsertionAdapter = InsertionAdapter(
+            database,
+            'welfare_contributions',
+            (WelfareContribution item) => <String, Object?>{
+                  'id': item.id,
+                  'fund_id': item.fund_id,
+                  'staff_id': item.staff_id,
+                  'staff_name': item.staff_name,
+                  'amount': item.amount,
+                  'type': item.type,
+                  'date': item.date
+                }),
+        _teacherQuarterAssignmentInsertionAdapter = InsertionAdapter(
+            database,
+            'teacher_quarters',
+            (TeacherQuarterAssignment item) => <String, Object?>{
+                  'id': item.id,
+                  'staff_id': item.staff_id,
+                  'staff_name': item.staff_name,
+                  'quarter_unit': item.quarter_unit,
+                  'assigned_date': item.assigned_date,
+                  'active': item.active ? 1 : 0
+                }),
+        _stockItemUpdateAdapter = UpdateAdapter(
+            database,
+            'stock_items',
+            ['id'],
+            (StockItem item) => <String, Object?>{
+                  'id': item.id,
+                  'category': item.category,
+                  'name': item.name,
+                  'unit': item.unit,
+                  'quantity_on_hand': item.quantity_on_hand,
+                  'reorder_level': item.reorder_level
+                }),
+        _libraryBookUpdateAdapter = UpdateAdapter(
+            database,
+            'library_books',
+            ['id'],
+            (LibraryBook item) => <String, Object?>{
+                  'id': item.id,
+                  'title': item.title,
+                  'author': item.author,
+                  'isbn': item.isbn,
+                  'category': item.category,
+                  'total_copies': item.total_copies,
+                  'available_copies': item.available_copies,
+                  'shelf_location': item.shelf_location,
+                  'version': item.version
+                }),
+        _libraryLoanUpdateAdapter = UpdateAdapter(
+            database,
+            'library_loans',
+            ['id'],
+            (LibraryLoan item) => <String, Object?>{
+                  'id': item.id,
+                  'book_id': item.book_id,
+                  'borrower_id': item.borrower_id,
+                  'borrower_name': item.borrower_name,
+                  'borrower_type': item.borrower_type,
+                  'borrowed_at': item.borrowed_at,
+                  'due_at': item.due_at,
+                  'returned_at': item.returned_at,
+                  'fine_amount': item.fine_amount
+                }),
+        _fleetVehicleUpdateAdapter = UpdateAdapter(
+            database,
+            'fleet_vehicles',
+            ['id'],
+            (FleetVehicle item) => <String, Object?>{
+                  'id': item.id,
+                  'plate_number': item.plate_number,
+                  'seats': item.seats,
+                  'driver_id': item.driver_id,
+                  'driver_name': item.driver_name,
+                  'consumption_rate': item.consumption_rate,
+                  'tank_capacity': item.tank_capacity,
+                  'odometer_km': item.odometer_km,
+                  'fuel_level': item.fuel_level,
+                  'status': item.status
+                }),
+        _transportEnrollmentUpdateAdapter = UpdateAdapter(
+            database,
+            'transport_enrollments',
+            ['id'],
+            (TransportEnrollment item) => <String, Object?>{
+                  'id': item.id,
+                  'student_id': item.student_id,
+                  'student_name': item.student_name,
+                  'guardian_contact': item.guardian_contact,
+                  'pickup_location': item.pickup_location,
+                  'van_id': item.van_id,
+                  'active': item.active ? 1 : 0
+                }),
+        _schoolTripUpdateAdapter = UpdateAdapter(
+            database,
+            'school_trips',
+            ['id'],
+            (SchoolTrip item) => <String, Object?>{
+                  'id': item.id,
+                  'teacher_id': item.teacher_id,
+                  'teacher_name': item.teacher_name,
+                  'class_id': item.class_id,
+                  'venue': item.venue,
+                  'purpose': item.purpose,
+                  'student_ids': item.student_ids,
+                  'status': item.status,
+                  'deputy_approved_by': item.deputy_approved_by,
+                  'amount': item.amount,
+                  'headteacher_signature': item.headteacher_signature,
+                  'fleet_alloc_ref': item.fleet_alloc_ref,
+                  'created_at': item.created_at,
+                  'trip_date': item.trip_date
+                }),
+        _casualWorkerUpdateAdapter = UpdateAdapter(
+            database,
+            'casual_workers',
+            ['id'],
+            (CasualWorker item) => <String, Object?>{
+                  'id': item.id,
+                  'name': item.name,
+                  'national_id': item.national_id,
+                  'job_description': item.job_description,
+                  'agreed_rate_per_day': item.agreed_rate_per_day,
+                  'registered_by': item.registered_by,
+                  'start_date': item.start_date,
+                  'end_date': item.end_date,
+                  'active': item.active ? 1 : 0,
+                  'blacklisted': item.blacklisted ? 1 : 0,
+                  'blacklist_reason': item.blacklist_reason
+                }),
+        _appointmentUpdateAdapter = UpdateAdapter(
+            database,
+            'appointments',
+            ['id'],
+            (Appointment item) => <String, Object?>{
+                  'id': item.id,
+                  'requested_with': item.requested_with,
+                  'requester_name': item.requester_name,
+                  'requester_contact': item.requester_contact,
+                  'purpose': item.purpose,
+                  'datetime': item.datetime,
+                  'status': item.status
+                }),
+        _dormRoomUpdateAdapter = UpdateAdapter(
+            database,
+            'dorm_rooms',
+            ['id'],
+            (DormRoom item) => <String, Object?>{
+                  'id': item.id,
+                  'block_id': item.block_id,
+                  'room_number': item.room_number,
+                  'floor': item.floor,
+                  'length_m': item.length_m,
+                  'width_m': item.width_m,
+                  'bed_count': item.bed_count
+                }),
+        _bedSlotUpdateAdapter = UpdateAdapter(
+            database,
+            'bed_slots',
+            ['id'],
+            (BedSlot item) => <String, Object?>{
+                  'id': item.id,
+                  'room_id': item.room_id,
+                  'bunk_position': item.bunk_position,
+                  'student_id': item.student_id,
+                  'student_name': item.student_name,
+                  'student_class': item.student_class,
+                  'reg_number': item.reg_number
+                }),
+        _dormFacilityUpdateAdapter = UpdateAdapter(
+            database,
+            'dorm_facilities',
+            ['id'],
+            (DormFacility item) => <String, Object?>{
+                  'id': item.id,
+                  'room_or_block_id': item.room_or_block_id,
+                  'type': item.type,
+                  'last_serviced': item.last_serviced,
+                  'next_due': item.next_due,
+                  'status': item.status
+                }),
+        _diningTableUpdateAdapter = UpdateAdapter(
+            database,
+            'dining_tables',
+            ['id'],
+            (DiningTable item) => <String, Object?>{
+                  'id': item.id,
+                  'table_number': item.table_number,
+                  'grade_level': item.grade_level,
+                  'student_ids': item.student_ids,
+                  'leader_ids': item.leader_ids
+                }),
+        _jobVacancyUpdateAdapter = UpdateAdapter(
+            database,
+            'job_vacancies',
+            ['id'],
+            (JobVacancy item) => <String, Object?>{
+                  'id': item.id,
+                  'title': item.title,
+                  'grade': item.grade,
+                  'department': item.department,
+                  'status': item.status,
+                  'budget_ref': item.budget_ref,
+                  'created_at': item.created_at
+                }),
+        _welfareFundUpdateAdapter = UpdateAdapter(
+            database,
+            'welfare_funds',
+            ['id'],
+            (WelfareFund item) => <String, Object?>{
+                  'id': item.id,
+                  'name': item.name,
+                  'balance': item.balance,
+                  'created_at': item.created_at
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<LeaveOutRequest> _leaveOutRequestInsertionAdapter;
+
+  final InsertionAdapter<LeaveOutEvent> _leaveOutEventInsertionAdapter;
+
+  final InsertionAdapter<GateLog> _gateLogInsertionAdapter;
+
+  final InsertionAdapter<VisitingSchool> _visitingSchoolInsertionAdapter;
+
+  final InsertionAdapter<SecurityIncident> _securityIncidentInsertionAdapter;
+
+  final InsertionAdapter<CameraFeed> _cameraFeedInsertionAdapter;
+
+  final InsertionAdapter<DutyAssignment> _dutyAssignmentInsertionAdapter;
+
+  final InsertionAdapter<StoreAsset> _storeAssetInsertionAdapter;
+
+  final InsertionAdapter<AssetAssignment> _assetAssignmentInsertionAdapter;
+
+  final InsertionAdapter<StockItem> _stockItemInsertionAdapter;
+
+  final InsertionAdapter<ProcurementRequest>
+      _procurementRequestInsertionAdapter;
+
+  final InsertionAdapter<LibraryBook> _libraryBookInsertionAdapter;
+
+  final InsertionAdapter<LibraryLoan> _libraryLoanInsertionAdapter;
+
+  final InsertionAdapter<LibraryMember> _libraryMemberInsertionAdapter;
+
+  final InsertionAdapter<FleetVehicle> _fleetVehicleInsertionAdapter;
+
+  final InsertionAdapter<TransportEnrollment>
+      _transportEnrollmentInsertionAdapter;
+
+  final InsertionAdapter<TransportEvent> _transportEventInsertionAdapter;
+
+  final InsertionAdapter<VehicleMaintenanceLog>
+      _vehicleMaintenanceLogInsertionAdapter;
+
+  final InsertionAdapter<FleetIncident> _fleetIncidentInsertionAdapter;
+
+  final InsertionAdapter<SchoolTrip> _schoolTripInsertionAdapter;
+
+  final InsertionAdapter<CasualWorker> _casualWorkerInsertionAdapter;
+
+  final InsertionAdapter<CasualAttendance> _casualAttendanceInsertionAdapter;
+
+  final InsertionAdapter<VisitorQueueEntry> _visitorQueueEntryInsertionAdapter;
+
+  final InsertionAdapter<BulkMessageJob> _bulkMessageJobInsertionAdapter;
+
+  final InsertionAdapter<Appointment> _appointmentInsertionAdapter;
+
+  final InsertionAdapter<DormBlock> _dormBlockInsertionAdapter;
+
+  final InsertionAdapter<DormRoom> _dormRoomInsertionAdapter;
+
+  final InsertionAdapter<BedSlot> _bedSlotInsertionAdapter;
+
+  final InsertionAdapter<DormFacility> _dormFacilityInsertionAdapter;
+
+  final InsertionAdapter<InspectionReport> _inspectionReportInsertionAdapter;
+
+  final InsertionAdapter<DiningTable> _diningTableInsertionAdapter;
+
+  final InsertionAdapter<BoardingStaffAssignment>
+      _boardingStaffAssignmentInsertionAdapter;
+
+  final InsertionAdapter<JobVacancy> _jobVacancyInsertionAdapter;
+
+  final InsertionAdapter<StaffDocument> _staffDocumentInsertionAdapter;
+
+  final InsertionAdapter<StaffStatutory> _staffStatutoryInsertionAdapter;
+
+  final InsertionAdapter<WorkforceIncident> _workforceIncidentInsertionAdapter;
+
+  final InsertionAdapter<WelfareFund> _welfareFundInsertionAdapter;
+
+  final InsertionAdapter<WelfareContribution>
+      _welfareContributionInsertionAdapter;
+
+  final InsertionAdapter<TeacherQuarterAssignment>
+      _teacherQuarterAssignmentInsertionAdapter;
+
+  final UpdateAdapter<StockItem> _stockItemUpdateAdapter;
+
+  final UpdateAdapter<LibraryBook> _libraryBookUpdateAdapter;
+
+  final UpdateAdapter<LibraryLoan> _libraryLoanUpdateAdapter;
+
+  final UpdateAdapter<FleetVehicle> _fleetVehicleUpdateAdapter;
+
+  final UpdateAdapter<TransportEnrollment> _transportEnrollmentUpdateAdapter;
+
+  final UpdateAdapter<SchoolTrip> _schoolTripUpdateAdapter;
+
+  final UpdateAdapter<CasualWorker> _casualWorkerUpdateAdapter;
+
+  final UpdateAdapter<Appointment> _appointmentUpdateAdapter;
+
+  final UpdateAdapter<DormRoom> _dormRoomUpdateAdapter;
+
+  final UpdateAdapter<BedSlot> _bedSlotUpdateAdapter;
+
+  final UpdateAdapter<DormFacility> _dormFacilityUpdateAdapter;
+
+  final UpdateAdapter<DiningTable> _diningTableUpdateAdapter;
+
+  final UpdateAdapter<JobVacancy> _jobVacancyUpdateAdapter;
+
+  final UpdateAdapter<WelfareFund> _welfareFundUpdateAdapter;
+
+  @override
+  Future<List<LeaveOutRequest>> getAllLeaveOuts() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM leave_out_requests ORDER BY created_at DESC',
+        mapper: (Map<String, Object?> row) => LeaveOutRequest(
+            id: row['id'] as String,
+            student_id: row['student_id'] as String,
+            student_name: row['student_name'] as String,
+            reason: row['reason'] as String,
+            reason_notes: row['reason_notes'] as String,
+            requested_by: row['requested_by'] as String,
+            severity: row['severity'] as String,
+            status: row['status'] as String,
+            created_by: row['created_by'] as String,
+            created_at: row['created_at'] as int));
+  }
+
+  @override
+  Future<List<LeaveOutRequest>> getLeaveOutsByStatus(String status) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM leave_out_requests WHERE status = ?1 ORDER BY created_at DESC',
+        mapper: (Map<String, Object?> row) => LeaveOutRequest(id: row['id'] as String, student_id: row['student_id'] as String, student_name: row['student_name'] as String, reason: row['reason'] as String, reason_notes: row['reason_notes'] as String, requested_by: row['requested_by'] as String, severity: row['severity'] as String, status: row['status'] as String, created_by: row['created_by'] as String, created_at: row['created_at'] as int),
+        arguments: [status]);
+  }
+
+  @override
+  Future<LeaveOutRequest?> getLeaveOutById(String id) async {
+    return _queryAdapter.query('SELECT * FROM leave_out_requests WHERE id = ?1',
+        mapper: (Map<String, Object?> row) => LeaveOutRequest(
+            id: row['id'] as String,
+            student_id: row['student_id'] as String,
+            student_name: row['student_name'] as String,
+            reason: row['reason'] as String,
+            reason_notes: row['reason_notes'] as String,
+            requested_by: row['requested_by'] as String,
+            severity: row['severity'] as String,
+            status: row['status'] as String,
+            created_by: row['created_by'] as String,
+            created_at: row['created_at'] as int),
+        arguments: [id]);
+  }
+
+  @override
+  Future<List<LeaveOutEvent>> getLeaveOutEvents(String id) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM leave_out_events WHERE leave_out_id = ?1 ORDER BY timestamp DESC',
+        mapper: (Map<String, Object?> row) => LeaveOutEvent(id: row['id'] as int?, leave_out_id: row['leave_out_id'] as String, event_type: row['event_type'] as String, timestamp: row['timestamp'] as int, recorded_by: row['recorded_by'] as String),
+        arguments: [id]);
+  }
+
+  @override
+  Future<void> updateLeaveOutStatus(
+    String id,
+    String status,
+  ) async {
+    await _queryAdapter.queryNoReturn(
+        'UPDATE leave_out_requests SET status = ?2 WHERE id = ?1',
+        arguments: [id, status]);
+  }
+
+  @override
+  Future<List<GateLog>> getGateLogs() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM gate_logs ORDER BY entry_ts DESC LIMIT 100',
+        mapper: (Map<String, Object?> row) => GateLog(
+            id: row['id'] as String,
+            type: row['type'] as String,
+            reg_number: row['reg_number'] as String?,
+            contact: row['contact'] as String,
+            reason: row['reason'] as String,
+            student_id: row['student_id'] as String?,
+            destination_dept: row['destination_dept'] as String?,
+            entry_ts: row['entry_ts'] as int,
+            exit_ts: row['exit_ts'] as int?,
+            recorded_by: row['recorded_by'] as String));
+  }
+
+  @override
+  Future<List<GateLog>> getActiveGateLogs() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM gate_logs WHERE exit_ts IS NULL ORDER BY entry_ts DESC',
+        mapper: (Map<String, Object?> row) => GateLog(
+            id: row['id'] as String,
+            type: row['type'] as String,
+            reg_number: row['reg_number'] as String?,
+            contact: row['contact'] as String,
+            reason: row['reason'] as String,
+            student_id: row['student_id'] as String?,
+            destination_dept: row['destination_dept'] as String?,
+            entry_ts: row['entry_ts'] as int,
+            exit_ts: row['exit_ts'] as int?,
+            recorded_by: row['recorded_by'] as String));
+  }
+
+  @override
+  Future<void> checkOutGate(
+    String id,
+    int exitTs,
+  ) async {
+    await _queryAdapter.queryNoReturn(
+        'UPDATE gate_logs SET exit_ts = ?2 WHERE id = ?1',
+        arguments: [id, exitTs]);
+  }
+
+  @override
+  Future<List<VisitingSchool>> getVisitingSchools() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM visiting_schools ORDER BY entry_ts DESC',
+        mapper: (Map<String, Object?> row) => VisitingSchool(
+            id: row['id'] as String,
+            school_name: row['school_name'] as String,
+            teacher_name: row['teacher_name'] as String,
+            student_count: row['student_count'] as int,
+            reason: row['reason'] as String,
+            entry_ts: row['entry_ts'] as int,
+            exit_ts: row['exit_ts'] as int?,
+            recorded_by: row['recorded_by'] as String));
+  }
+
+  @override
+  Future<List<SecurityIncident>> getSecurityIncidents() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM security_incidents ORDER BY created_at DESC',
+        mapper: (Map<String, Object?> row) => SecurityIncident(
+            id: row['id'] as String,
+            shift: row['shift'] as String,
+            description: row['description'] as String,
+            photo_url: row['photo_url'] as String?,
+            flagged_indiscipline: (row['flagged_indiscipline'] as int) != 0,
+            escalated_to: row['escalated_to'] as String?,
+            created_at: row['created_at'] as int,
+            created_by: row['created_by'] as String));
+  }
+
+  @override
+  Future<List<CameraFeed>> getCameraFeeds() async {
+    return _queryAdapter.queryList('SELECT * FROM camera_feeds',
+        mapper: (Map<String, Object?> row) => CameraFeed(
+            id: row['id'] as String,
+            label: row['label'] as String,
+            ip_address: row['ip_address'] as String,
+            access_key_hash: row['access_key_hash'] as String,
+            zone: row['zone'] as String,
+            issued_by: row['issued_by'] as String));
+  }
+
+  @override
+  Future<List<CameraFeed>> getCameraFeedsByZone(String zone) async {
+    return _queryAdapter.queryList('SELECT * FROM camera_feeds WHERE zone = ?1',
+        mapper: (Map<String, Object?> row) => CameraFeed(
+            id: row['id'] as String,
+            label: row['label'] as String,
+            ip_address: row['ip_address'] as String,
+            access_key_hash: row['access_key_hash'] as String,
+            zone: row['zone'] as String,
+            issued_by: row['issued_by'] as String),
+        arguments: [zone]);
+  }
+
+  @override
+  Future<List<DutyAssignment>> getDutyAssignmentsByDate(int date) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM duty_assignments WHERE shift_date = ?1',
+        mapper: (Map<String, Object?> row) => DutyAssignment(
+            id: row['id'] as int?,
+            guard_id: row['guard_id'] as String,
+            guard_name: row['guard_name'] as String,
+            role: row['role'] as String,
+            shift_date: row['shift_date'] as int),
+        arguments: [date]);
+  }
+
+  @override
+  Future<List<StoreAsset>> getAllStoreAssets() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM store_assets ORDER BY name ASC',
+        mapper: (Map<String, Object?> row) => StoreAsset(
+            id: row['id'] as String,
+            category: row['category'] as String,
+            name: row['name'] as String,
+            tag_number: row['tag_number'] as String,
+            condition: row['condition'] as String,
+            status: row['status'] as String,
+            created_at: row['created_at'] as int));
+  }
+
+  @override
+  Future<List<StoreAsset>> getStoreAssetsByStatus(String status) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM store_assets WHERE status = ?1',
+        mapper: (Map<String, Object?> row) => StoreAsset(
+            id: row['id'] as String,
+            category: row['category'] as String,
+            name: row['name'] as String,
+            tag_number: row['tag_number'] as String,
+            condition: row['condition'] as String,
+            status: row['status'] as String,
+            created_at: row['created_at'] as int),
+        arguments: [status]);
+  }
+
+  @override
+  Future<void> updateStoreAssetStatus(
+    String id,
+    String status,
+  ) async {
+    await _queryAdapter.queryNoReturn(
+        'UPDATE store_assets SET status = ?2 WHERE id = ?1',
+        arguments: [id, status]);
+  }
+
+  @override
+  Future<List<AssetAssignment>> getAssignmentsForAsset(String assetId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM asset_assignments WHERE asset_id = ?1 ORDER BY assigned_at DESC',
+        mapper: (Map<String, Object?> row) => AssetAssignment(id: row['id'] as String, asset_id: row['asset_id'] as String, assigned_to_type: row['assigned_to_type'] as String, assigned_to_id: row['assigned_to_id'] as String, assign_condition: row['assign_condition'] as String, return_condition: row['return_condition'] as String?, assigned_at: row['assigned_at'] as int, returned_at: row['returned_at'] as int?),
+        arguments: [assetId]);
+  }
+
+  @override
+  Future<List<StockItem>> getAllStockItems() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM stock_items ORDER BY name ASC',
+        mapper: (Map<String, Object?> row) => StockItem(
+            id: row['id'] as String,
+            category: row['category'] as String,
+            name: row['name'] as String,
+            unit: row['unit'] as String,
+            quantity_on_hand: row['quantity_on_hand'] as int,
+            reorder_level: row['reorder_level'] as int));
+  }
+
+  @override
+  Future<List<StockItem>> getLowStockItems() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM stock_items WHERE quantity_on_hand <= reorder_level',
+        mapper: (Map<String, Object?> row) => StockItem(
+            id: row['id'] as String,
+            category: row['category'] as String,
+            name: row['name'] as String,
+            unit: row['unit'] as String,
+            quantity_on_hand: row['quantity_on_hand'] as int,
+            reorder_level: row['reorder_level'] as int));
+  }
+
+  @override
+  Future<List<ProcurementRequest>> getAllProcurementRequests() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM procurement_requests ORDER BY created_at DESC',
+        mapper: (Map<String, Object?> row) => ProcurementRequest(
+            id: row['id'] as String,
+            source_module: row['source_module'] as String,
+            item: row['item'] as String,
+            qty: row['qty'] as int,
+            estimated_cost: row['estimated_cost'] as double,
+            justification: row['justification'] as String,
+            requested_by: row['requested_by'] as String,
+            status: row['status'] as String,
+            approval_log: row['approval_log'] as String?,
+            created_at: row['created_at'] as int));
+  }
+
+  @override
+  Future<List<ProcurementRequest>> getProcurementByModule(String module) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM procurement_requests WHERE source_module = ?1 ORDER BY created_at DESC',
+        mapper: (Map<String, Object?> row) => ProcurementRequest(id: row['id'] as String, source_module: row['source_module'] as String, item: row['item'] as String, qty: row['qty'] as int, estimated_cost: row['estimated_cost'] as double, justification: row['justification'] as String, requested_by: row['requested_by'] as String, status: row['status'] as String, approval_log: row['approval_log'] as String?, created_at: row['created_at'] as int),
+        arguments: [module]);
+  }
+
+  @override
+  Future<List<ProcurementRequest>> getProcurementByStatus(String status) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM procurement_requests WHERE status = ?1 ORDER BY created_at DESC',
+        mapper: (Map<String, Object?> row) => ProcurementRequest(id: row['id'] as String, source_module: row['source_module'] as String, item: row['item'] as String, qty: row['qty'] as int, estimated_cost: row['estimated_cost'] as double, justification: row['justification'] as String, requested_by: row['requested_by'] as String, status: row['status'] as String, approval_log: row['approval_log'] as String?, created_at: row['created_at'] as int),
+        arguments: [status]);
+  }
+
+  @override
+  Future<void> updateProcurementStatus(
+    String id,
+    String status,
+    String log,
+  ) async {
+    await _queryAdapter.queryNoReturn(
+        'UPDATE procurement_requests SET status = ?2, approval_log = ?3 WHERE id = ?1',
+        arguments: [id, status, log]);
+  }
+
+  @override
+  Future<List<LibraryBook>> getAllBooks() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM library_books ORDER BY title ASC',
+        mapper: (Map<String, Object?> row) => LibraryBook(
+            id: row['id'] as String,
+            title: row['title'] as String,
+            author: row['author'] as String,
+            isbn: row['isbn'] as String,
+            category: row['category'] as String,
+            total_copies: row['total_copies'] as int,
+            available_copies: row['available_copies'] as int,
+            shelf_location: row['shelf_location'] as String,
+            version: row['version'] as int));
+  }
+
+  @override
+  Future<List<LibraryBook>> searchBooks(String q) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM library_books WHERE title LIKE ?1 OR author LIKE ?1',
+        mapper: (Map<String, Object?> row) => LibraryBook(
+            id: row['id'] as String,
+            title: row['title'] as String,
+            author: row['author'] as String,
+            isbn: row['isbn'] as String,
+            category: row['category'] as String,
+            total_copies: row['total_copies'] as int,
+            available_copies: row['available_copies'] as int,
+            shelf_location: row['shelf_location'] as String,
+            version: row['version'] as int),
+        arguments: [q]);
+  }
+
+  @override
+  Future<LibraryBook?> getBookById(String id) async {
+    return _queryAdapter.query('SELECT * FROM library_books WHERE id = ?1',
+        mapper: (Map<String, Object?> row) => LibraryBook(
+            id: row['id'] as String,
+            title: row['title'] as String,
+            author: row['author'] as String,
+            isbn: row['isbn'] as String,
+            category: row['category'] as String,
+            total_copies: row['total_copies'] as int,
+            available_copies: row['available_copies'] as int,
+            shelf_location: row['shelf_location'] as String,
+            version: row['version'] as int),
+        arguments: [id]);
+  }
+
+  @override
+  Future<List<LibraryBook>> getAvailableBooks() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM library_books WHERE available_copies > 0 ORDER BY title ASC',
+        mapper: (Map<String, Object?> row) => LibraryBook(
+            id: row['id'] as String,
+            title: row['title'] as String,
+            author: row['author'] as String,
+            isbn: row['isbn'] as String,
+            category: row['category'] as String,
+            total_copies: row['total_copies'] as int,
+            available_copies: row['available_copies'] as int,
+            shelf_location: row['shelf_location'] as String,
+            version: row['version'] as int));
+  }
+
+  @override
+  Future<List<LibraryLoan>> getActiveLoans() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM library_loans WHERE returned_at IS NULL ORDER BY borrowed_at DESC',
+        mapper: (Map<String, Object?> row) => LibraryLoan(
+            id: row['id'] as String,
+            book_id: row['book_id'] as String,
+            borrower_id: row['borrower_id'] as String,
+            borrower_name: row['borrower_name'] as String,
+            borrower_type: row['borrower_type'] as String,
+            borrowed_at: row['borrowed_at'] as int,
+            due_at: row['due_at'] as int,
+            returned_at: row['returned_at'] as int?,
+            fine_amount: row['fine_amount'] as double));
+  }
+
+  @override
+  Future<List<LibraryLoan>> getLoansByBorrower(String borrowerId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM library_loans WHERE borrower_id = ?1 ORDER BY borrowed_at DESC',
+        mapper: (Map<String, Object?> row) => LibraryLoan(id: row['id'] as String, book_id: row['book_id'] as String, borrower_id: row['borrower_id'] as String, borrower_name: row['borrower_name'] as String, borrower_type: row['borrower_type'] as String, borrowed_at: row['borrowed_at'] as int, due_at: row['due_at'] as int, returned_at: row['returned_at'] as int?, fine_amount: row['fine_amount'] as double),
+        arguments: [borrowerId]);
+  }
+
+  @override
+  Future<List<LibraryLoan>> getOverdueLoans(int now) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM library_loans WHERE returned_at IS NULL AND due_at < ?1',
+        mapper: (Map<String, Object?> row) => LibraryLoan(
+            id: row['id'] as String,
+            book_id: row['book_id'] as String,
+            borrower_id: row['borrower_id'] as String,
+            borrower_name: row['borrower_name'] as String,
+            borrower_type: row['borrower_type'] as String,
+            borrowed_at: row['borrowed_at'] as int,
+            due_at: row['due_at'] as int,
+            returned_at: row['returned_at'] as int?,
+            fine_amount: row['fine_amount'] as double),
+        arguments: [now]);
+  }
+
+  @override
+  Future<List<LibraryMember>> getAllLibraryMembers() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM library_members ORDER BY name ASC',
+        mapper: (Map<String, Object?> row) => LibraryMember(
+            id: row['id'] as String,
+            person_id: row['person_id'] as String,
+            name: row['name'] as String,
+            type: row['type'] as String,
+            borrow_limit: row['borrow_limit'] as int,
+            is_active: (row['is_active'] as int) != 0));
+  }
+
+  @override
+  Future<List<FleetVehicle>> getAllVehicles() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM fleet_vehicles ORDER BY plate_number ASC',
+        mapper: (Map<String, Object?> row) => FleetVehicle(
+            id: row['id'] as String,
+            plate_number: row['plate_number'] as String,
+            seats: row['seats'] as int,
+            driver_id: row['driver_id'] as String,
+            driver_name: row['driver_name'] as String,
+            consumption_rate: row['consumption_rate'] as double,
+            tank_capacity: row['tank_capacity'] as double,
+            odometer_km: row['odometer_km'] as double,
+            fuel_level: row['fuel_level'] as double,
+            status: row['status'] as String));
+  }
+
+  @override
+  Future<List<FleetVehicle>> getVehiclesByStatus(String status) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM fleet_vehicles WHERE status = ?1',
+        mapper: (Map<String, Object?> row) => FleetVehicle(
+            id: row['id'] as String,
+            plate_number: row['plate_number'] as String,
+            seats: row['seats'] as int,
+            driver_id: row['driver_id'] as String,
+            driver_name: row['driver_name'] as String,
+            consumption_rate: row['consumption_rate'] as double,
+            tank_capacity: row['tank_capacity'] as double,
+            odometer_km: row['odometer_km'] as double,
+            fuel_level: row['fuel_level'] as double,
+            status: row['status'] as String),
+        arguments: [status]);
+  }
+
+  @override
+  Future<List<TransportEnrollment>> getActiveEnrollments() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM transport_enrollments WHERE active = 1 ORDER BY student_name ASC',
+        mapper: (Map<String, Object?> row) => TransportEnrollment(
+            id: row['id'] as String,
+            student_id: row['student_id'] as String,
+            student_name: row['student_name'] as String,
+            guardian_contact: row['guardian_contact'] as String,
+            pickup_location: row['pickup_location'] as String,
+            van_id: row['van_id'] as String,
+            active: (row['active'] as int) != 0));
+  }
+
+  @override
+  Future<List<TransportEnrollment>> getEnrollmentsByVan(String vanId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM transport_enrollments WHERE van_id = ?1 AND active = 1',
+        mapper: (Map<String, Object?> row) => TransportEnrollment(
+            id: row['id'] as String,
+            student_id: row['student_id'] as String,
+            student_name: row['student_name'] as String,
+            guardian_contact: row['guardian_contact'] as String,
+            pickup_location: row['pickup_location'] as String,
+            van_id: row['van_id'] as String,
+            active: (row['active'] as int) != 0),
+        arguments: [vanId]);
+  }
+
+  @override
+  Future<List<TransportEvent>> getTransportEventsByVan(String vanId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM transport_events WHERE van_id = ?1 ORDER BY timestamp DESC LIMIT 50',
+        mapper: (Map<String, Object?> row) => TransportEvent(id: row['id'] as int?, student_id: row['student_id'] as String, van_id: row['van_id'] as String, event_type: row['event_type'] as String, timestamp: row['timestamp'] as int),
+        arguments: [vanId]);
+  }
+
+  @override
+  Future<List<VehicleMaintenanceLog>> getMaintenanceLogs(
+      String vehicleId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM vehicle_maintenance_logs WHERE vehicle_id = ?1 ORDER BY date DESC',
+        mapper: (Map<String, Object?> row) => VehicleMaintenanceLog(id: row['id'] as String, vehicle_id: row['vehicle_id'] as String, type: row['type'] as String, date: row['date'] as int, cost: row['cost'] as double, notes: row['notes'] as String),
+        arguments: [vehicleId]);
+  }
+
+  @override
+  Future<List<FleetIncident>> getFleetIncidents() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM fleet_incidents ORDER BY reported_at DESC',
+        mapper: (Map<String, Object?> row) => FleetIncident(
+            id: row['id'] as String,
+            van_id: row['van_id'] as String,
+            description: row['description'] as String,
+            reported_at: row['reported_at'] as int,
+            reported_by: row['reported_by'] as String,
+            notified_fleet_manager: (row['notified_fleet_manager'] as int) != 0,
+            notified_receptionist: (row['notified_receptionist'] as int) != 0));
+  }
+
+  @override
+  Future<List<SchoolTrip>> getAllTrips() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM school_trips ORDER BY created_at DESC',
+        mapper: (Map<String, Object?> row) => SchoolTrip(
+            id: row['id'] as String,
+            teacher_id: row['teacher_id'] as String,
+            teacher_name: row['teacher_name'] as String,
+            class_id: row['class_id'] as String,
+            venue: row['venue'] as String,
+            purpose: row['purpose'] as String,
+            student_ids: row['student_ids'] as String,
+            status: row['status'] as String,
+            deputy_approved_by: row['deputy_approved_by'] as String?,
+            amount: row['amount'] as double,
+            headteacher_signature: row['headteacher_signature'] as String?,
+            fleet_alloc_ref: row['fleet_alloc_ref'] as String?,
+            created_at: row['created_at'] as int,
+            trip_date: row['trip_date'] as int?));
+  }
+
+  @override
+  Future<List<SchoolTrip>> getTripsByStatus(String status) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM school_trips WHERE status = ?1 ORDER BY created_at DESC',
+        mapper: (Map<String, Object?> row) => SchoolTrip(
+            id: row['id'] as String,
+            teacher_id: row['teacher_id'] as String,
+            teacher_name: row['teacher_name'] as String,
+            class_id: row['class_id'] as String,
+            venue: row['venue'] as String,
+            purpose: row['purpose'] as String,
+            student_ids: row['student_ids'] as String,
+            status: row['status'] as String,
+            deputy_approved_by: row['deputy_approved_by'] as String?,
+            amount: row['amount'] as double,
+            headteacher_signature: row['headteacher_signature'] as String?,
+            fleet_alloc_ref: row['fleet_alloc_ref'] as String?,
+            created_at: row['created_at'] as int,
+            trip_date: row['trip_date'] as int?),
+        arguments: [status]);
+  }
+
+  @override
+  Future<List<CasualWorker>> getActiveCasualWorkers() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM casual_workers WHERE active = 1 ORDER BY name ASC',
+        mapper: (Map<String, Object?> row) => CasualWorker(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            national_id: row['national_id'] as String,
+            job_description: row['job_description'] as String,
+            agreed_rate_per_day: row['agreed_rate_per_day'] as double,
+            registered_by: row['registered_by'] as String,
+            start_date: row['start_date'] as int,
+            end_date: row['end_date'] as int?,
+            active: (row['active'] as int) != 0,
+            blacklisted: (row['blacklisted'] as int) != 0,
+            blacklist_reason: row['blacklist_reason'] as String?));
+  }
+
+  @override
+  Future<List<CasualWorker>> getAllCasualWorkers() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM casual_workers ORDER BY name ASC',
+        mapper: (Map<String, Object?> row) => CasualWorker(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            national_id: row['national_id'] as String,
+            job_description: row['job_description'] as String,
+            agreed_rate_per_day: row['agreed_rate_per_day'] as double,
+            registered_by: row['registered_by'] as String,
+            start_date: row['start_date'] as int,
+            end_date: row['end_date'] as int?,
+            active: (row['active'] as int) != 0,
+            blacklisted: (row['blacklisted'] as int) != 0,
+            blacklist_reason: row['blacklist_reason'] as String?));
+  }
+
+  @override
+  Future<CasualWorker?> findCasualWorkerByNationalId(String nid) async {
+    return _queryAdapter.query(
+        'SELECT * FROM casual_workers WHERE national_id = ?1',
+        mapper: (Map<String, Object?> row) => CasualWorker(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            national_id: row['national_id'] as String,
+            job_description: row['job_description'] as String,
+            agreed_rate_per_day: row['agreed_rate_per_day'] as double,
+            registered_by: row['registered_by'] as String,
+            start_date: row['start_date'] as int,
+            end_date: row['end_date'] as int?,
+            active: (row['active'] as int) != 0,
+            blacklisted: (row['blacklisted'] as int) != 0,
+            blacklist_reason: row['blacklist_reason'] as String?),
+        arguments: [nid]);
+  }
+
+  @override
+  Future<void> recordCasualOut(
+    int id,
+    int outTs,
+  ) async {
+    await _queryAdapter.queryNoReturn(
+        'UPDATE casual_attendance SET out_ts = ?2 WHERE id = ?1',
+        arguments: [id, outTs]);
+  }
+
+  @override
+  Future<List<CasualAttendance>> getCasualAttendance(String workerId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM casual_attendance WHERE worker_id = ?1 ORDER BY in_ts DESC',
+        mapper: (Map<String, Object?> row) => CasualAttendance(id: row['id'] as int?, worker_id: row['worker_id'] as String, in_ts: row['in_ts'] as int, out_ts: row['out_ts'] as int?, recorded_by: row['recorded_by'] as String),
+        arguments: [workerId]);
+  }
+
+  @override
+  Future<CasualAttendance?> getOpenCasualAttendance(String workerId) async {
+    return _queryAdapter.query(
+        'SELECT * FROM casual_attendance WHERE out_ts IS NULL AND worker_id = ?1',
+        mapper: (Map<String, Object?> row) => CasualAttendance(id: row['id'] as int?, worker_id: row['worker_id'] as String, in_ts: row['in_ts'] as int, out_ts: row['out_ts'] as int?, recorded_by: row['recorded_by'] as String),
+        arguments: [workerId]);
+  }
+
+  @override
+  Future<List<VisitorQueueEntry>> getVisitorQueue(String status) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM visitor_queue WHERE status = ?1 ORDER BY arrived_at ASC',
+        mapper: (Map<String, Object?> row) => VisitorQueueEntry(
+            id: row['id'] as String,
+            visitor_name: row['visitor_name'] as String,
+            contact: row['contact'] as String,
+            purpose: row['purpose'] as String,
+            person_to_see: row['person_to_see'] as String?,
+            arrived_at: row['arrived_at'] as int,
+            attended_at: row['attended_at'] as int?,
+            status: row['status'] as String),
+        arguments: [status]);
+  }
+
+  @override
+  Future<void> updateVisitorQueueStatus(
+    String id,
+    String status,
+    int ts,
+  ) async {
+    await _queryAdapter.queryNoReturn(
+        'UPDATE visitor_queue SET status = ?2, attended_at = ?3 WHERE id = ?1',
+        arguments: [id, status, ts]);
+  }
+
+  @override
+  Future<List<BulkMessageJob>> getBulkMessageJobs() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM bulk_message_jobs ORDER BY sent_at DESC LIMIT 50',
+        mapper: (Map<String, Object?> row) => BulkMessageJob(
+            id: row['id'] as String,
+            source_module: row['source_module'] as String,
+            message_template: row['message_template'] as String,
+            recipient_list: row['recipient_list'] as String,
+            sent_at: row['sent_at'] as int?,
+            status: row['status'] as String));
+  }
+
+  @override
+  Future<List<Appointment>> getAllAppointments() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM appointments ORDER BY datetime DESC',
+        mapper: (Map<String, Object?> row) => Appointment(
+            id: row['id'] as String,
+            requested_with: row['requested_with'] as String,
+            requester_name: row['requester_name'] as String,
+            requester_contact: row['requester_contact'] as String,
+            purpose: row['purpose'] as String,
+            datetime: row['datetime'] as int,
+            status: row['status'] as String));
+  }
+
+  @override
+  Future<List<Appointment>> getAppointmentsByStatus(String status) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM appointments WHERE status = ?1 ORDER BY datetime ASC',
+        mapper: (Map<String, Object?> row) => Appointment(
+            id: row['id'] as String,
+            requested_with: row['requested_with'] as String,
+            requester_name: row['requester_name'] as String,
+            requester_contact: row['requester_contact'] as String,
+            purpose: row['purpose'] as String,
+            datetime: row['datetime'] as int,
+            status: row['status'] as String),
+        arguments: [status]);
+  }
+
+  @override
+  Future<List<DormBlock>> getDormBlocks() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM dorm_blocks ORDER BY name ASC',
+        mapper: (Map<String, Object?> row) => DormBlock(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            type: row['type'] as String,
+            floor_count: row['floor_count'] as int));
+  }
+
+  @override
+  Future<List<DormRoom>> getRoomsByBlock(String blockId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM dorm_rooms WHERE block_id = ?1 ORDER BY room_number ASC',
+        mapper: (Map<String, Object?> row) => DormRoom(
+            id: row['id'] as String,
+            block_id: row['block_id'] as String,
+            room_number: row['room_number'] as String,
+            floor: row['floor'] as int,
+            length_m: row['length_m'] as double,
+            width_m: row['width_m'] as double,
+            bed_count: row['bed_count'] as int),
+        arguments: [blockId]);
+  }
+
+  @override
+  Future<List<BedSlot>> getBedSlotsByRoom(String roomId) async {
+    return _queryAdapter.queryList('SELECT * FROM bed_slots WHERE room_id = ?1',
+        mapper: (Map<String, Object?> row) => BedSlot(
+            id: row['id'] as String,
+            room_id: row['room_id'] as String,
+            bunk_position: row['bunk_position'] as String,
+            student_id: row['student_id'] as String?,
+            student_name: row['student_name'] as String?,
+            student_class: row['student_class'] as String?,
+            reg_number: row['reg_number'] as String?),
+        arguments: [roomId]);
+  }
+
+  @override
+  Future<List<BedSlot>> getVacantBeds() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM bed_slots WHERE student_id IS NULL',
+        mapper: (Map<String, Object?> row) => BedSlot(
+            id: row['id'] as String,
+            room_id: row['room_id'] as String,
+            bunk_position: row['bunk_position'] as String,
+            student_id: row['student_id'] as String?,
+            student_name: row['student_name'] as String?,
+            student_class: row['student_class'] as String?,
+            reg_number: row['reg_number'] as String?));
+  }
+
+  @override
+  Future<List<DormFacility>> getAllFacilities() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM dorm_facilities ORDER BY next_due ASC',
+        mapper: (Map<String, Object?> row) => DormFacility(
+            id: row['id'] as String,
+            room_or_block_id: row['room_or_block_id'] as String,
+            type: row['type'] as String,
+            last_serviced: row['last_serviced'] as int,
+            next_due: row['next_due'] as int,
+            status: row['status'] as String));
+  }
+
+  @override
+  Future<List<DormFacility>> getOverdueFacilities(
+    int ts,
+    String status,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM dorm_facilities WHERE next_due < ?1 OR status = ?2',
+        mapper: (Map<String, Object?> row) => DormFacility(
+            id: row['id'] as String,
+            room_or_block_id: row['room_or_block_id'] as String,
+            type: row['type'] as String,
+            last_serviced: row['last_serviced'] as int,
+            next_due: row['next_due'] as int,
+            status: row['status'] as String),
+        arguments: [ts, status]);
+  }
+
+  @override
+  Future<List<InspectionReport>> getAllInspections() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM inspection_reports ORDER BY submitted_at DESC',
+        mapper: (Map<String, Object?> row) => InspectionReport(
+            id: row['id'] as String,
+            area_type: row['area_type'] as String,
+            condition_notes: row['condition_notes'] as String,
+            submitted_by: row['submitted_by'] as String,
+            submitted_at: row['submitted_at'] as int,
+            severity: row['severity'] as String));
+  }
+
+  @override
+  Future<List<DiningTable>> getAllDiningTables() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM dining_tables ORDER BY table_number ASC',
+        mapper: (Map<String, Object?> row) => DiningTable(
+            id: row['id'] as String,
+            table_number: row['table_number'] as int,
+            grade_level: row['grade_level'] as String,
+            student_ids: row['student_ids'] as String,
+            leader_ids: row['leader_ids'] as String));
+  }
+
+  @override
+  Future<List<BoardingStaffAssignment>> getBoardingStaff() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM boarding_staff ORDER BY role ASC',
+        mapper: (Map<String, Object?> row) => BoardingStaffAssignment(
+            id: row['id'] as int?,
+            staff_id: row['staff_id'] as String,
+            staff_name: row['staff_name'] as String,
+            role: row['role'] as String,
+            duties: row['duties'] as String));
+  }
+
+  @override
+  Future<List<JobVacancy>> getAllVacancies() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM job_vacancies ORDER BY created_at DESC',
+        mapper: (Map<String, Object?> row) => JobVacancy(
+            id: row['id'] as String,
+            title: row['title'] as String,
+            grade: row['grade'] as String,
+            department: row['department'] as String,
+            status: row['status'] as String,
+            budget_ref: row['budget_ref'] as String?,
+            created_at: row['created_at'] as int));
+  }
+
+  @override
+  Future<List<JobVacancy>> getVacanciesByStatus(String status) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM job_vacancies WHERE status = ?1',
+        mapper: (Map<String, Object?> row) => JobVacancy(
+            id: row['id'] as String,
+            title: row['title'] as String,
+            grade: row['grade'] as String,
+            department: row['department'] as String,
+            status: row['status'] as String,
+            budget_ref: row['budget_ref'] as String?,
+            created_at: row['created_at'] as int),
+        arguments: [status]);
+  }
+
+  @override
+  Future<List<StaffDocument>> getDocumentsForStaff(String staffId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM staff_documents WHERE staff_id = ?1 ORDER BY uploaded_at DESC',
+        mapper: (Map<String, Object?> row) => StaffDocument(id: row['id'] as String, staff_id: row['staff_id'] as String, doc_type: row['doc_type'] as String, file_url: row['file_url'] as String, file_name: row['file_name'] as String, uploaded_at: row['uploaded_at'] as int, uploaded_by: row['uploaded_by'] as String),
+        arguments: [staffId]);
+  }
+
+  @override
+  Future<StaffStatutory?> getStatutoryForStaff(String staffId) async {
+    return _queryAdapter.query(
+        'SELECT * FROM staff_statutory WHERE staff_id = ?1',
+        mapper: (Map<String, Object?> row) => StaffStatutory(
+            staff_id: row['staff_id'] as String,
+            nssf_number: row['nssf_number'] as String?,
+            sha_number: row['sha_number'] as String?,
+            tsc_number: row['tsc_number'] as String?,
+            national_id: row['national_id'] as String?,
+            email: row['email'] as String?),
+        arguments: [staffId]);
+  }
+
+  @override
+  Future<List<WorkforceIncident>> getAllWorkforceIncidents() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM workforce_incidents ORDER BY created_at DESC',
+        mapper: (Map<String, Object?> row) => WorkforceIncident(
+            id: row['id'] as String,
+            staff_id: row['staff_id'] as String,
+            staff_name: row['staff_name'] as String,
+            type: row['type'] as String,
+            description: row['description'] as String,
+            reported_by: row['reported_by'] as String,
+            action_taken: row['action_taken'] as String?,
+            status: row['status'] as String,
+            created_at: row['created_at'] as int));
+  }
+
+  @override
+  Future<void> resolveWorkforceIncident(
+    String id,
+    String status,
+    String action,
+  ) async {
+    await _queryAdapter.queryNoReturn(
+        'UPDATE workforce_incidents SET status = ?2, action_taken = ?3 WHERE id = ?1',
+        arguments: [id, status, action]);
+  }
+
+  @override
+  Future<List<WelfareFund>> getAllWelfareFunds() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM welfare_funds ORDER BY name ASC',
+        mapper: (Map<String, Object?> row) => WelfareFund(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            balance: row['balance'] as double,
+            created_at: row['created_at'] as int));
+  }
+
+  @override
+  Future<List<WelfareContribution>> getContributionsByFund(
+      String fundId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM welfare_contributions WHERE fund_id = ?1 ORDER BY date DESC',
+        mapper: (Map<String, Object?> row) => WelfareContribution(id: row['id'] as int?, fund_id: row['fund_id'] as String, staff_id: row['staff_id'] as String, staff_name: row['staff_name'] as String, amount: row['amount'] as double, type: row['type'] as String, date: row['date'] as int),
+        arguments: [fundId]);
+  }
+
+  @override
+  Future<List<TeacherQuarterAssignment>> getActiveQuarterAssignments() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM teacher_quarters WHERE active = 1 ORDER BY quarter_unit ASC',
+        mapper: (Map<String, Object?> row) => TeacherQuarterAssignment(
+            id: row['id'] as String,
+            staff_id: row['staff_id'] as String,
+            staff_name: row['staff_name'] as String,
+            quarter_unit: row['quarter_unit'] as String,
+            assigned_date: row['assigned_date'] as int,
+            active: (row['active'] as int) != 0));
+  }
+
+  @override
+  Future<void> insertLeaveOut(LeaveOutRequest req) async {
+    await _leaveOutRequestInsertionAdapter.insert(
+        req, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertLeaveOutEvent(LeaveOutEvent event) async {
+    await _leaveOutEventInsertionAdapter.insert(
+        event, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertGateLog(GateLog log) async {
+    await _gateLogInsertionAdapter.insert(log, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertVisitingSchool(VisitingSchool vs) async {
+    await _visitingSchoolInsertionAdapter.insert(
+        vs, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertSecurityIncident(SecurityIncident inc) async {
+    await _securityIncidentInsertionAdapter.insert(
+        inc, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertCameraFeed(CameraFeed feed) async {
+    await _cameraFeedInsertionAdapter.insert(feed, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertDutyAssignment(DutyAssignment da) async {
+    await _dutyAssignmentInsertionAdapter.insert(
+        da, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertStoreAsset(StoreAsset asset) async {
+    await _storeAssetInsertionAdapter.insert(asset, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertAssetAssignment(AssetAssignment aa) async {
+    await _assetAssignmentInsertionAdapter.insert(
+        aa, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertStockItem(StockItem item) async {
+    await _stockItemInsertionAdapter.insert(item, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertProcurementRequest(ProcurementRequest req) async {
+    await _procurementRequestInsertionAdapter.insert(
+        req, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertLibraryBook(LibraryBook book) async {
+    await _libraryBookInsertionAdapter.insert(book, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertLibraryLoan(LibraryLoan loan) async {
+    await _libraryLoanInsertionAdapter.insert(loan, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertLibraryMember(LibraryMember member) async {
+    await _libraryMemberInsertionAdapter.insert(
+        member, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertFleetVehicle(FleetVehicle v) async {
+    await _fleetVehicleInsertionAdapter.insert(v, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertTransportEnrollment(TransportEnrollment e) async {
+    await _transportEnrollmentInsertionAdapter.insert(
+        e, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertTransportEvent(TransportEvent e) async {
+    await _transportEventInsertionAdapter.insert(e, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertMaintenanceLog(VehicleMaintenanceLog log) async {
+    await _vehicleMaintenanceLogInsertionAdapter.insert(
+        log, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertFleetIncident(FleetIncident inc) async {
+    await _fleetIncidentInsertionAdapter.insert(
+        inc, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertSchoolTrip(SchoolTrip trip) async {
+    await _schoolTripInsertionAdapter.insert(trip, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertCasualWorker(CasualWorker w) async {
+    await _casualWorkerInsertionAdapter.insert(w, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertCasualAttendance(CasualAttendance att) async {
+    await _casualAttendanceInsertionAdapter.insert(
+        att, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertVisitorQueueEntry(VisitorQueueEntry entry) async {
+    await _visitorQueueEntryInsertionAdapter.insert(
+        entry, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertBulkMessageJob(BulkMessageJob job) async {
+    await _bulkMessageJobInsertionAdapter.insert(
+        job, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertAppointment(Appointment appt) async {
+    await _appointmentInsertionAdapter.insert(appt, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertDormBlock(DormBlock block) async {
+    await _dormBlockInsertionAdapter.insert(block, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertDormRoom(DormRoom room) async {
+    await _dormRoomInsertionAdapter.insert(room, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertBedSlot(BedSlot bed) async {
+    await _bedSlotInsertionAdapter.insert(bed, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertDormFacility(DormFacility fac) async {
+    await _dormFacilityInsertionAdapter.insert(fac, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertInspectionReport(InspectionReport report) async {
+    await _inspectionReportInsertionAdapter.insert(
+        report, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertDiningTable(DiningTable table) async {
+    await _diningTableInsertionAdapter.insert(
+        table, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertBoardingStaff(BoardingStaffAssignment bsa) async {
+    await _boardingStaffAssignmentInsertionAdapter.insert(
+        bsa, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertJobVacancy(JobVacancy v) async {
+    await _jobVacancyInsertionAdapter.insert(v, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertStaffDocument(StaffDocument doc) async {
+    await _staffDocumentInsertionAdapter.insert(
+        doc, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertStaffStatutory(StaffStatutory stat) async {
+    await _staffStatutoryInsertionAdapter.insert(
+        stat, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertWorkforceIncident(WorkforceIncident inc) async {
+    await _workforceIncidentInsertionAdapter.insert(
+        inc, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertWelfareFund(WelfareFund fund) async {
+    await _welfareFundInsertionAdapter.insert(fund, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertWelfareContribution(WelfareContribution c) async {
+    await _welfareContributionInsertionAdapter.insert(
+        c, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> insertTeacherQuarter(TeacherQuarterAssignment qa) async {
+    await _teacherQuarterAssignmentInsertionAdapter.insert(
+        qa, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> updateStockItem(StockItem item) async {
+    await _stockItemUpdateAdapter.update(item, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> updateLibraryBook(LibraryBook book) async {
+    await _libraryBookUpdateAdapter.update(book, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> updateLibraryLoan(LibraryLoan loan) async {
+    await _libraryLoanUpdateAdapter.update(loan, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> updateFleetVehicle(FleetVehicle v) async {
+    await _fleetVehicleUpdateAdapter.update(v, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> updateTransportEnrollment(TransportEnrollment e) async {
+    await _transportEnrollmentUpdateAdapter.update(
+        e, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> updateSchoolTrip(SchoolTrip trip) async {
+    await _schoolTripUpdateAdapter.update(trip, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> updateCasualWorker(CasualWorker w) async {
+    await _casualWorkerUpdateAdapter.update(w, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> updateAppointment(Appointment appt) async {
+    await _appointmentUpdateAdapter.update(appt, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> updateDormRoom(DormRoom room) async {
+    await _dormRoomUpdateAdapter.update(room, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> updateBedSlot(BedSlot bed) async {
+    await _bedSlotUpdateAdapter.update(bed, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> updateDormFacility(DormFacility fac) async {
+    await _dormFacilityUpdateAdapter.update(fac, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> updateDiningTable(DiningTable table) async {
+    await _diningTableUpdateAdapter.update(table, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> updateJobVacancy(JobVacancy v) async {
+    await _jobVacancyUpdateAdapter.update(v, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> updateWelfareFund(WelfareFund fund) async {
+    await _welfareFundUpdateAdapter.update(fund, OnConflictStrategy.replace);
   }
 }

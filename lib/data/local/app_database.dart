@@ -25,6 +25,7 @@ import '../models/club_model.dart';
 import '../models/tod_model.dart';
 import '../models/messaging_models.dart';
 import '../models/finance_erp_models.dart';
+import '../models/operations_models.dart';
 // DAOs
 import 'daos/user_dao.dart';
 import 'daos/student_dao.dart';
@@ -49,6 +50,7 @@ import 'daos/dept_activity_dao.dart';
 import 'daos/club_dao.dart';
 import 'daos/tod_dao.dart';
 import 'daos/finance_erp_dao.dart';
+import 'daos/operations_dao.dart';
 
 part 'app_database.g.dart';
 
@@ -441,6 +443,58 @@ final migration14to15 = Migration(14, 15, (database) async {
   await database.execute('CREATE TABLE IF NOT EXISTS `payroll_entries` (`payroll_entry_id` TEXT NOT NULL, `month` TEXT NOT NULL, `structure_id` TEXT NOT NULL, `status` TEXT NOT NULL, `posting_date` INTEGER NOT NULL, `count_processed` INTEGER NOT NULL, PRIMARY KEY (`payroll_entry_id`))');
 });
 
+final migration16to17 = Migration(16, 17, (database) async {
+  // Leave-Out Module
+  await database.execute('CREATE TABLE IF NOT EXISTS `leave_out_requests` (`id` TEXT NOT NULL, `student_id` TEXT NOT NULL, `student_name` TEXT NOT NULL, `reason` TEXT NOT NULL, `reason_notes` TEXT NOT NULL, `requested_by` TEXT NOT NULL, `severity` TEXT NOT NULL, `status` TEXT NOT NULL, `created_by` TEXT NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `leave_out_events` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `leave_out_id` TEXT NOT NULL, `event_type` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `recorded_by` TEXT NOT NULL)');
+  // Gate / Security Expanded
+  await database.execute('CREATE TABLE IF NOT EXISTS `gate_logs` (`id` TEXT NOT NULL, `type` TEXT NOT NULL, `reg_number` TEXT, `contact` TEXT NOT NULL, `reason` TEXT NOT NULL, `student_id` TEXT, `destination_dept` TEXT, `entry_ts` INTEGER NOT NULL, `exit_ts` INTEGER, `recorded_by` TEXT NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `visiting_schools` (`id` TEXT NOT NULL, `school_name` TEXT NOT NULL, `teacher_name` TEXT NOT NULL, `student_count` INTEGER NOT NULL, `reason` TEXT NOT NULL, `entry_ts` INTEGER NOT NULL, `exit_ts` INTEGER, `recorded_by` TEXT NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `security_incidents` (`id` TEXT NOT NULL, `shift` TEXT NOT NULL, `description` TEXT NOT NULL, `photo_url` TEXT, `flagged_indiscipline` INTEGER NOT NULL, `escalated_to` TEXT, `created_at` INTEGER NOT NULL, `created_by` TEXT NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `camera_feeds` (`id` TEXT NOT NULL, `label` TEXT NOT NULL, `ip_address` TEXT NOT NULL, `access_key_hash` TEXT NOT NULL, `zone` TEXT NOT NULL, `issued_by` TEXT NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `duty_assignments` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `guard_id` TEXT NOT NULL, `guard_name` TEXT NOT NULL, `role` TEXT NOT NULL, `shift_date` INTEGER NOT NULL)');
+  // Store Keeper
+  await database.execute('CREATE TABLE IF NOT EXISTS `store_assets` (`id` TEXT NOT NULL, `category` TEXT NOT NULL, `name` TEXT NOT NULL, `tag_number` TEXT NOT NULL, `condition` TEXT NOT NULL, `status` TEXT NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `asset_assignments` (`id` TEXT NOT NULL, `asset_id` TEXT NOT NULL, `assigned_to_type` TEXT NOT NULL, `assigned_to_id` TEXT NOT NULL, `assign_condition` TEXT NOT NULL, `return_condition` TEXT, `assigned_at` INTEGER NOT NULL, `returned_at` INTEGER, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `stock_items` (`id` TEXT NOT NULL, `category` TEXT NOT NULL, `name` TEXT NOT NULL, `unit` TEXT NOT NULL, `quantity_on_hand` INTEGER NOT NULL, `reorder_level` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `procurement_requests` (`id` TEXT NOT NULL, `source_module` TEXT NOT NULL, `item` TEXT NOT NULL, `qty` INTEGER NOT NULL, `estimated_cost` REAL NOT NULL, `justification` TEXT NOT NULL, `requested_by` TEXT NOT NULL, `status` TEXT NOT NULL, `approval_log` TEXT, `created_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+  // Library
+  await database.execute('CREATE TABLE IF NOT EXISTS `library_books` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `author` TEXT NOT NULL, `isbn` TEXT NOT NULL, `category` TEXT NOT NULL, `total_copies` INTEGER NOT NULL, `available_copies` INTEGER NOT NULL, `shelf_location` TEXT NOT NULL, `version` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `library_loans` (`id` TEXT NOT NULL, `book_id` TEXT NOT NULL, `borrower_id` TEXT NOT NULL, `borrower_name` TEXT NOT NULL, `borrower_type` TEXT NOT NULL, `borrowed_at` INTEGER NOT NULL, `due_at` INTEGER NOT NULL, `returned_at` INTEGER, `fine_amount` REAL NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `library_members` (`id` TEXT NOT NULL, `person_id` TEXT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `borrow_limit` INTEGER NOT NULL, `is_active` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+  // Fleet
+  await database.execute('CREATE TABLE IF NOT EXISTS `fleet_vehicles` (`id` TEXT NOT NULL, `plate_number` TEXT NOT NULL, `seats` INTEGER NOT NULL, `driver_id` TEXT NOT NULL, `driver_name` TEXT NOT NULL, `consumption_rate` REAL NOT NULL, `tank_capacity` REAL NOT NULL, `odometer_km` REAL NOT NULL, `fuel_level` REAL NOT NULL, `status` TEXT NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `transport_enrollments` (`id` TEXT NOT NULL, `student_id` TEXT NOT NULL, `student_name` TEXT NOT NULL, `guardian_contact` TEXT NOT NULL, `pickup_location` TEXT NOT NULL, `van_id` TEXT NOT NULL, `active` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `transport_events` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `student_id` TEXT NOT NULL, `van_id` TEXT NOT NULL, `event_type` TEXT NOT NULL, `timestamp` INTEGER NOT NULL)');
+  await database.execute('CREATE TABLE IF NOT EXISTS `vehicle_maintenance_logs` (`id` TEXT NOT NULL, `vehicle_id` TEXT NOT NULL, `type` TEXT NOT NULL, `date` INTEGER NOT NULL, `cost` REAL NOT NULL, `notes` TEXT NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `fleet_incidents` (`id` TEXT NOT NULL, `van_id` TEXT NOT NULL, `description` TEXT NOT NULL, `reported_at` INTEGER NOT NULL, `reported_by` TEXT NOT NULL, `notified_fleet_manager` INTEGER NOT NULL, `notified_receptionist` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+  // Trips
+  await database.execute('CREATE TABLE IF NOT EXISTS `school_trips` (`id` TEXT NOT NULL, `teacher_id` TEXT NOT NULL, `teacher_name` TEXT NOT NULL, `class_id` TEXT NOT NULL, `venue` TEXT NOT NULL, `purpose` TEXT NOT NULL, `student_ids` TEXT NOT NULL, `status` TEXT NOT NULL, `deputy_approved_by` TEXT, `amount` REAL NOT NULL, `headteacher_signature` TEXT, `fleet_alloc_ref` TEXT, `created_at` INTEGER NOT NULL, `trip_date` INTEGER, PRIMARY KEY (`id`))');
+  // Casual Workers
+  await database.execute('CREATE TABLE IF NOT EXISTS `casual_workers` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `national_id` TEXT NOT NULL, `job_description` TEXT NOT NULL, `agreed_rate_per_day` REAL NOT NULL, `registered_by` TEXT NOT NULL, `start_date` INTEGER NOT NULL, `end_date` INTEGER, `active` INTEGER NOT NULL, `blacklisted` INTEGER NOT NULL, `blacklist_reason` TEXT, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `casual_attendance` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `worker_id` TEXT NOT NULL, `in_ts` INTEGER NOT NULL, `out_ts` INTEGER, `recorded_by` TEXT NOT NULL)');
+  // Reception
+  await database.execute('CREATE TABLE IF NOT EXISTS `visitor_queue` (`id` TEXT NOT NULL, `visitor_name` TEXT NOT NULL, `contact` TEXT NOT NULL, `purpose` TEXT NOT NULL, `person_to_see` TEXT, `arrived_at` INTEGER NOT NULL, `attended_at` INTEGER, `status` TEXT NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `bulk_message_jobs` (`id` TEXT NOT NULL, `source_module` TEXT NOT NULL, `message_template` TEXT NOT NULL, `recipient_list` TEXT NOT NULL, `sent_at` INTEGER, `status` TEXT NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `appointments` (`id` TEXT NOT NULL, `requested_with` TEXT NOT NULL, `requester_name` TEXT NOT NULL, `requester_contact` TEXT NOT NULL, `purpose` TEXT NOT NULL, `datetime` INTEGER NOT NULL, `status` TEXT NOT NULL, PRIMARY KEY (`id`))');
+  // Boarding
+  await database.execute('CREATE TABLE IF NOT EXISTS `dorm_blocks` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `floor_count` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `dorm_rooms` (`id` TEXT NOT NULL, `block_id` TEXT NOT NULL, `room_number` TEXT NOT NULL, `floor` INTEGER NOT NULL, `length_m` REAL NOT NULL, `width_m` REAL NOT NULL, `bed_count` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `bed_slots` (`id` TEXT NOT NULL, `room_id` TEXT NOT NULL, `bunk_position` TEXT NOT NULL, `student_id` TEXT, `student_name` TEXT, `student_class` TEXT, `reg_number` TEXT, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `dorm_facilities` (`id` TEXT NOT NULL, `room_or_block_id` TEXT NOT NULL, `type` TEXT NOT NULL, `last_serviced` INTEGER NOT NULL, `next_due` INTEGER NOT NULL, `status` TEXT NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `inspection_reports` (`id` TEXT NOT NULL, `area_type` TEXT NOT NULL, `condition_notes` TEXT NOT NULL, `submitted_by` TEXT NOT NULL, `submitted_at` INTEGER NOT NULL, `severity` TEXT NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `dining_tables` (`id` TEXT NOT NULL, `table_number` INTEGER NOT NULL, `grade_level` TEXT NOT NULL, `student_ids` TEXT NOT NULL, `leader_ids` TEXT NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `boarding_staff` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `staff_id` TEXT NOT NULL, `staff_name` TEXT NOT NULL, `role` TEXT NOT NULL, `duties` TEXT NOT NULL)');
+  // HR
+  await database.execute('CREATE TABLE IF NOT EXISTS `job_vacancies` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, `grade` TEXT NOT NULL, `department` TEXT NOT NULL, `status` TEXT NOT NULL, `budget_ref` TEXT, `created_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `staff_documents` (`id` TEXT NOT NULL, `staff_id` TEXT NOT NULL, `doc_type` TEXT NOT NULL, `file_url` TEXT NOT NULL, `file_name` TEXT NOT NULL, `uploaded_at` INTEGER NOT NULL, `uploaded_by` TEXT NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `staff_statutory` (`staff_id` TEXT NOT NULL, `nssf_number` TEXT, `sha_number` TEXT, `tsc_number` TEXT, `national_id` TEXT, `email` TEXT, PRIMARY KEY (`staff_id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `workforce_incidents` (`id` TEXT NOT NULL, `staff_id` TEXT NOT NULL, `staff_name` TEXT NOT NULL, `type` TEXT NOT NULL, `description` TEXT NOT NULL, `reported_by` TEXT NOT NULL, `action_taken` TEXT, `status` TEXT NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `welfare_funds` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `balance` REAL NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+  await database.execute('CREATE TABLE IF NOT EXISTS `welfare_contributions` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `fund_id` TEXT NOT NULL, `staff_id` TEXT NOT NULL, `staff_name` TEXT NOT NULL, `amount` REAL NOT NULL, `type` TEXT NOT NULL, `date` INTEGER NOT NULL)');
+  await database.execute('CREATE TABLE IF NOT EXISTS `teacher_quarters` (`id` TEXT NOT NULL, `staff_id` TEXT NOT NULL, `staff_name` TEXT NOT NULL, `quarter_unit` TEXT NOT NULL, `assigned_date` INTEGER NOT NULL, `active` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+});
+
 final migration15to16 = Migration(15, 16, (database) async {
   // Fix staff_loans table schema mismatch
   await database.execute('CREATE TABLE IF NOT EXISTS `staff_loans_backup` (`loan_id` TEXT NOT NULL, `staff_id` TEXT NOT NULL, `loan_amount` REAL NOT NULL, `interest_rate` REAL NOT NULL, `repayment_period` INTEGER NOT NULL, `monthly_deduction` REAL NOT NULL, `total_repayment` REAL NOT NULL, `remaining_balance` REAL NOT NULL, `status` TEXT NOT NULL, `approved_by` TEXT, `issue_date` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, PRIMARY KEY (`loan_id`))');
@@ -459,7 +513,7 @@ final migration15to16 = Migration(15, 16, (database) async {
   await database.execute('ALTER TABLE `staff_loans_backup` RENAME TO `staff_loans`');
 });
 
-@Database(version: 16, entities: [
+@Database(version: 17, entities: [
   UserModel,
   StudentModel,
   LearningAreaModel,
@@ -541,6 +595,46 @@ final migration15to16 = Migration(15, 16, (database) async {
   SalaryStructure,
   SalaryStructureAssignment,
   PayrollEntry,
+  // Operations Modules
+  LeaveOutRequest,
+  LeaveOutEvent,
+  GateLog,
+  VisitingSchool,
+  SecurityIncident,
+  CameraFeed,
+  DutyAssignment,
+  StoreAsset,
+  AssetAssignment,
+  StockItem,
+  ProcurementRequest,
+  LibraryBook,
+  LibraryLoan,
+  LibraryMember,
+  FleetVehicle,
+  TransportEnrollment,
+  TransportEvent,
+  VehicleMaintenanceLog,
+  FleetIncident,
+  SchoolTrip,
+  CasualWorker,
+  CasualAttendance,
+  VisitorQueueEntry,
+  BulkMessageJob,
+  Appointment,
+  DormBlock,
+  DormRoom,
+  BedSlot,
+  DormFacility,
+  InspectionReport,
+  DiningTable,
+  BoardingStaffAssignment,
+  JobVacancy,
+  StaffDocument,
+  StaffStatutory,
+  WorkforceIncident,
+  WelfareFund,
+  WelfareContribution,
+  TeacherQuarterAssignment,
 ])
 abstract class AppDatabase extends FloorDatabase {
   UserDao get userDao;
@@ -566,6 +660,7 @@ abstract class AppDatabase extends FloorDatabase {
   ClubDao get clubDao;
   TodDao get todDao;
   FinanceErpDao get financeErpDao;
+  OperationsDao get operationsDao;
 
   static Future<AppDatabase> create() async {
     return await $FloorAppDatabase
@@ -574,7 +669,7 @@ abstract class AppDatabase extends FloorDatabase {
           migration1to2, migration2to3, migration3to4, migration4to5,
           migration5to6, migration6to7, migration7to8, migration8to9,
           migration9to10, migration10to11, migration11to12, migration12to13, migration13to14, migration14to15,
-          migration15to16,
+          migration15to16, migration16to17,
         ])
         .build();
     }
