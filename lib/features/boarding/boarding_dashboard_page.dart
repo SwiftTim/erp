@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../../data/models/operations_models.dart';
 import '../auth/auth_provider.dart';
+import '../../core/constants/document_templates.dart';
+import '../../core/widgets/printable_document_hub.dart';
 
 // MoE spacing constants (Kenya Boarding Rules — configurable)
 const double kMinAreaPerBoarderM2 = 3.7; // m² per boarder (MoE minimum)
@@ -73,7 +75,20 @@ class _BoardingDashboardPageState extends ConsumerState<BoardingDashboardPage>
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text('Boarding Master', style: TextStyle(fontWeight: FontWeight.bold)),
-        actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))],
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              PrintableDocumentHub.show(
+                context,
+                'Boarding & Dorms',
+                DocumentTemplates.getTemplatesForModule('boarding'),
+              );
+            },
+            icon: const Icon(Icons.print_outlined, size: 18, color: Color(0xFF8B5CF6)),
+            label: const Text('Forms / Slips', style: TextStyle(color: Color(0xFF8B5CF6))),
+          ),
+          IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
+        ],
         bottom: TabBar(
           controller: _tab,
           labelColor: const Color(0xFF8B5CF6),

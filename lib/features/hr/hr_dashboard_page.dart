@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../../data/models/operations_models.dart';
 import '../auth/auth_provider.dart';
+import '../../core/constants/document_templates.dart';
+import '../../core/widgets/printable_document_hub.dart';
 
 class HrDashboardPage extends ConsumerStatefulWidget {
   const HrDashboardPage({super.key});
@@ -57,7 +59,20 @@ class _HrDashboardPageState extends ConsumerState<HrDashboardPage>
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text('HR Office', style: TextStyle(fontWeight: FontWeight.bold)),
-        actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))],
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              PrintableDocumentHub.show(
+                context,
+                'Human Resources Office',
+                DocumentTemplates.getTemplatesForModule('hr'),
+              );
+            },
+            icon: const Icon(Icons.print_outlined, size: 18, color: Color(0xFFE11D48)),
+            label: const Text('Forms / Slips', style: TextStyle(color: Color(0xFFE11D48))),
+          ),
+          IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
+        ],
         bottom: TabBar(
           controller: _tab,
           labelColor: const Color(0xFFE11D48),
@@ -450,7 +465,7 @@ class _HrDashboardPageState extends ConsumerState<HrDashboardPage>
               await db.operationsDao.updateWelfareFund(WelfareFund(
                 id: fund.id,
                 name: fund.name,
-                balance: newBalance,
+                balance: newBalance.toDouble(),
                 created_at: fund.created_at,
               ));
               Navigator.pop(ctx);

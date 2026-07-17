@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../../data/models/operations_models.dart';
 import '../auth/auth_provider.dart';
+import '../../core/constants/document_templates.dart';
+import '../../core/widgets/printable_document_hub.dart';
 
 class ReceptionDashboardPage extends ConsumerStatefulWidget {
   const ReceptionDashboardPage({super.key});
@@ -58,7 +60,20 @@ class _ReceptionDashboardPageState extends ConsumerState<ReceptionDashboardPage>
                 style: const TextStyle(fontSize: 12, color: Colors.grey)),
           ],
         ),
-        actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))],
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              PrintableDocumentHub.show(
+                context,
+                'Reception Desk',
+                DocumentTemplates.getTemplatesForModule('reception'),
+              );
+            },
+            icon: const Icon(Icons.print_outlined, size: 18, color: Color(0xFF0EA5E9)),
+            label: const Text('Forms / Slips', style: TextStyle(color: Color(0xFF0EA5E9))),
+          ),
+          IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
+        ],
         bottom: TabBar(
           controller: _tab,
           labelColor: const Color(0xFF0EA5E9),

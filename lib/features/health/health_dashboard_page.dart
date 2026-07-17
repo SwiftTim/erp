@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/medical_model.dart';
 import '../auth/auth_provider.dart';
 import '../dashboard/widgets/app_shell.dart';
+import '../../core/constants/document_templates.dart';
+import '../../core/widgets/printable_document_hub.dart';
 import 'package:intl/intl.dart';
 import 'widgets/log_visit_dialog.dart';
 
@@ -71,6 +73,19 @@ class _HealthDashboardPageState extends ConsumerState<HealthDashboardPage> {
   Widget build(BuildContext context) {
     return AppShell(
       title: 'School Clinic Management',
+      actions: [
+        TextButton.icon(
+          onPressed: () {
+            PrintableDocumentHub.show(
+              context,
+              'Sanatorium / Medical Hub',
+              DocumentTemplates.getTemplatesForModule('nurse'),
+            );
+          },
+          icon: const Icon(Icons.print_outlined, size: 18, color: Colors.teal),
+          label: const Text('Forms / Slips', style: TextStyle(color: Colors.teal)),
+        ),
+      ],
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showLogVisitDialog,
         label: const Text('Log Visit'),
