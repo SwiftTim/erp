@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../../data/models/operations_models.dart';
 import '../auth/auth_provider.dart';
+import '../../core/constants/document_templates.dart';
+import '../../core/widgets/printable_document_hub.dart';
 
 class TripsDashboardPage extends ConsumerStatefulWidget {
   const TripsDashboardPage({super.key});
@@ -51,7 +53,20 @@ class _TripsDashboardPageState extends ConsumerState<TripsDashboardPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text('Trips & Tours', style: TextStyle(fontWeight: FontWeight.bold)),
-        actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))],
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              PrintableDocumentHub.show(
+                context,
+                'Trips & Tours',
+                DocumentTemplates.getTemplatesForModule('trips'),
+              );
+            },
+            icon: const Icon(Icons.print_outlined, size: 18, color: Color(0xFFF59E0B)),
+            label: const Text('Forms / Slips', style: TextStyle(color: Color(0xFFF59E0B))),
+          ),
+          IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showNewTrip,

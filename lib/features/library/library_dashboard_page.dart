@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../../data/models/operations_models.dart';
 import '../auth/auth_provider.dart';
+import '../../core/constants/document_templates.dart';
+import '../../core/widgets/printable_document_hub.dart';
 
 class LibraryDashboardPage extends ConsumerStatefulWidget {
   const LibraryDashboardPage({super.key});
@@ -55,6 +57,17 @@ class _LibraryDashboardPageState extends ConsumerState<LibraryDashboardPage>
         title: const Text('Library Management',
             style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
+          TextButton.icon(
+            onPressed: () {
+              PrintableDocumentHub.show(
+                context,
+                'Library Office',
+                DocumentTemplates.getTemplatesForModule('library'),
+              );
+            },
+            icon: const Icon(Icons.print_outlined, size: 18, color: Color(0xFF0EA5E9)),
+            label: const Text('Forms / Slips', style: TextStyle(color: Color(0xFF0EA5E9))),
+          ),
           IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
         ],
         bottom: TabBar(

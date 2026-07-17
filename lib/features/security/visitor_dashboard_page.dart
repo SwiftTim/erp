@@ -9,6 +9,8 @@ import '../../data/models/security_model.dart';
 import '../auth/auth_provider.dart';
 import '../dashboard/widgets/app_shell.dart';
 import 'package:intl/intl.dart';
+import '../../core/constants/document_templates.dart';
+import '../../core/widgets/printable_document_hub.dart';
 
 class VisitorDashboardPage extends ConsumerStatefulWidget {
   const VisitorDashboardPage({super.key});
@@ -51,6 +53,19 @@ class _VisitorDashboardPageState extends ConsumerState<VisitorDashboardPage> wit
   Widget build(BuildContext context) {
     return AppShell(
       title: 'Security Desk — Gate 1',
+      actions: [
+        TextButton.icon(
+          onPressed: () {
+            PrintableDocumentHub.show(
+              context,
+              'Security & Gate',
+              DocumentTemplates.getTemplatesForModule('security'),
+            );
+          },
+          icon: const Icon(Icons.print_outlined, size: 18, color: Colors.blue),
+          label: const Text('Forms / Slips', style: TextStyle(color: Colors.blue)),
+        ),
+      ],
       body: Column(
         children: [
           TabBar(

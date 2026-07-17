@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../../data/models/operations_models.dart';
 import '../auth/auth_provider.dart';
+import '../../core/constants/document_templates.dart';
+import '../../core/widgets/printable_document_hub.dart';
 
 class LeaveOutPage extends ConsumerStatefulWidget {
   const LeaveOutPage({super.key});
@@ -51,6 +53,17 @@ class _LeaveOutPageState extends ConsumerState<LeaveOutPage>
         title: const Text('Student Leave-Out',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         actions: [
+          TextButton.icon(
+            onPressed: () {
+              PrintableDocumentHub.show(
+                context,
+                'Leave-Out',
+                DocumentTemplates.getTemplatesForModule('leave_out'),
+              );
+            },
+            icon: const Icon(Icons.print_outlined, size: 18, color: Color(0xFF4F46E5)),
+            label: const Text('Forms / Slips', style: TextStyle(color: Color(0xFF4F46E5))),
+          ),
           IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
         ],
         bottom: TabBar(
